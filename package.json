@@ -28,6 +28,8 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/leaflet": "^1.9.21",
+    "@types/lodash.debounce": "^4.0.9",
+    "@types/minimatch": "^3.0.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

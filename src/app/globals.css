@@ -49,6 +49,12 @@
 
 :root {
   --radius: 0.625rem;
+  /* Brand palette */
+  --brand-deep: #1a2b48; /* deep blue */
+  --brand-bg: #f8fafc; /* arctic white */
+  --brand-accent: #00d4ff; /* cyan */
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.4);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

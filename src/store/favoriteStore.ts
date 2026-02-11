@@ -23,7 +23,7 @@ export const useFavoriteStore = create<FavoriteStore>()(
       favorites: [],
       addFavorite: (tour: Tour) => {
         set((state) => {
-          if (!state.favorites.find((fav) => fav.id === tour.id)) {
+          if (!state.favorites.some((fav) => fav.id === tour.id)) {
             return { favorites: [...state.favorites, tour] };
           }
           return state;

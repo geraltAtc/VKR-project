@@ -5,13 +5,14 @@ import { useEffect, useState } from "react";
 export const useNetworkStatus = () => {
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [isSupported] = useState<boolean>(
-    typeof window !== "undefined" && "onLine" in navigator,
+    typeof globalThis !== "undefined" &&
+      "onLine" in (globalThis.navigator || {}),
   );
 
   useEffect(() => {
     // Установить начальный статус
     if (isSupported) {
-      setIsOnline(navigator.onLine);
+      setIsOnline((globalThis.navigator as any).onLine ?? true);
     }
 
     // Обработчик события онлайн
@@ -20,13 +21,13 @@ export const useNetworkStatus = () => {
     // Обработчик события оффлайн
     const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    globalThis.addEventListener("online", handleOnline as EventListener);
+    globalThis.addEventListener("offline", handleOffline as EventListener);
 
     // Очистка слушателей
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      globalThis.removeEventListener("online", handleOnline as EventListener);
+      globalThis.removeEventListener("offline", handleOffline as EventListener);
     };
   }, [isSupported]);
 
