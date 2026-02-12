@@ -5,3 +5,4 @@ export { HeroSearch } from "./HeroSearch";
 export { Filters } from "./Filters";
 export { ComparisonModal } from "./ComparisonModal";
 export { BookingForm } from "./BookingForm";
+export { PwaBenefits } from "./PwaBenefits";

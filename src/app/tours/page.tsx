@@ -9,14 +9,20 @@ import {
   BookingForm,
   TourCard,
   TourMap,
+  PwaBenefits,
 } from "@/components";
 import { tourService } from "@/services";
-import { useCompareStore } from "@/store/compareStore";
+import type { Tour } from "@/store/favoriteStore";
 
 export default function ToursPage() {
-  const [tours, setTours] = useState<any[]>([]);
+  const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
-  const [, /* filters */ setFilters] = useState<any>({});
+  const [filters, setFilters] = useState<{
+    price?: [number, number];
+    duration?: string;
+    rating?: number | null;
+  }>({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -38,17 +44,55 @@ export default function ToursPage() {
     };
   }, []);
 
-  const markers = tours.map((t) => ({
+  const filteredTours = tours.filter((t) => {
+    const matchesSearch =
+      !searchQuery ||
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (t as any).location?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const [minPrice, maxPrice] = filters.price || [0, Number.MAX_SAFE_INTEGER];
+    const priceOk =
+      t.price == null ||
+      (typeof t.price === "number" && t.price >= minPrice && t.price <= maxPrice);
+
+    const durationFilter = filters.duration;
+    let durationOk = true;
+    const rawDuration = (t as any).duration as string | undefined;
+    if (durationFilter && rawDuration) {
+      const daysMatch = rawDuration.match(/\d+/);
+      const days = daysMatch ? Number(daysMatch[0]) : undefined;
+      if (days != null) {
+        if (durationFilter === "1-3") durationOk = days >= 1 && days <= 3;
+        if (durationFilter === "4-7") durationOk = days >= 4 && days <= 7;
+        if (durationFilter === ">7") durationOk = days > 7;
+      }
+    }
+
+    const ratingFilter = filters.rating;
+    const ratingOk =
+      !ratingFilter ||
+      ((t as any).rating != null && (t as any).rating >= ratingFilter);
+
+    return matchesSearch && priceOk && durationOk && ratingOk;
+  });
+
+  const markers = filteredTours.map((t) => ({
     id: t.id,
     name: t.name,
-    lat: t.lat || 51.505,
-    lng: t.lng || -0.09,
+    lat: (t as any).lat || 51.505,
+    lng: (t as any).lng || -0.09,
+    price: t.price,
+    description: (t as any).location || t.description,
   }));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#F8FAFC] to-white">
       <Header />
-      <HeroSearch />
+      <HeroSearch
+        tours={tours}
+        onSearchChange={(value) => setSearchQuery(value)}
+      />
+      <PwaBenefits />
 
       <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="col-span-1">
@@ -71,7 +115,7 @@ export default function ToursPage() {
                     className="h-44 bg-gray-100 animate-pulse rounded-2xl"
                   />
                 ))
-              : tours.map((t) => <TourCard key={t.id} tour={t} />)}
+              : filteredTours.map((t) => <TourCard key={t.id} tour={t} />)}
           </div>
         </div>
 

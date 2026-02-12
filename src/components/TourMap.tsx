@@ -1,9 +1,7 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import { LatLngExpression } from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
+import type { LatLngExpression } from "leaflet";
 
 interface MapMarker {
   id: string;
@@ -11,6 +9,7 @@ interface MapMarker {
   lat: number;
   lng: number;
   description?: string;
+  price?: number;
 }
 
 interface TourMapProps {
@@ -20,6 +19,8 @@ interface TourMapProps {
   height?: string;
 }
 
+type LeafletModule = typeof import("react-leaflet");
+
 export const TourMap: React.FC<TourMapProps> = ({
   markers,
   center = [51.505, -0.09],
@@ -27,12 +28,24 @@ export const TourMap: React.FC<TourMapProps> = ({
   height = "400px",
 }) => {
   const [isMounted, setIsMounted] = useState(false);
+  const [leaflet, setLeaflet] = useState<LeafletModule | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
+    if (typeof window !== "undefined") {
+      // Динамически подключаем Leaflet только на клиенте
+      import("leaflet/dist/leaflet.css");
+      import("react-leaflet")
+        .then((mod) => {
+          setLeaflet(mod);
+        })
+        .catch((err) => {
+          console.error("Failed to load react-leaflet", err);
+        });
+    }
   }, []);
 
-  if (!isMounted) {
+  if (!isMounted || !leaflet) {
     return (
       <div
         style={{ height }}
@@ -42,6 +55,8 @@ export const TourMap: React.FC<TourMapProps> = ({
       </div>
     );
   }
+
+  const { MapContainer, TileLayer, Marker, Popup } = leaflet;
 
   return (
     <MapContainer
@@ -61,6 +76,11 @@ export const TourMap: React.FC<TourMapProps> = ({
           <Popup>
             <div className="text-sm">
               <h4 className="font-bold mb-1">{marker.name}</h4>
+              {marker.price != null && (
+                <p className="font-semibold text-[#00D4FF] mb-1">
+                  ${marker.price.toLocaleString()}
+                </p>
+              )}
               {marker.description && <p>{marker.description}</p>}
             </div>
           </Popup>

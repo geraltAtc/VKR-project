@@ -1,37 +1,40 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { tourService } from "@/services";
-import debounce from "lodash.debounce";
+import { useState, useMemo } from "react";
+import type { Tour } from "@/store/favoriteStore";
 
-export const HeroSearch: React.FC = () => {
+interface HeroSearchProps {
+  tours: Tour[];
+  onSearchChange?: (value: string) => void;
+}
+
+export const HeroSearch: React.FC<HeroSearchProps> = ({
+  tours,
+  onSearchChange,
+}) => {
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  const doSearch = async (q: string) => {
-    if (!q) {
-      setSuggestions([]);
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await tourService.searchTours(q);
-      setSuggestions(res || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+  const suggestions = useMemo(() => {
+    if (!query) return [];
+    const lower = query.toLowerCase();
+    return tours
+      .filter((t) => {
+        const inName = t.name.toLowerCase().includes(lower);
+        const inDescription = t.description
+          ?.toLowerCase()
+          .includes(lower);
+        const inLocation = (t as any).location
+          ?.toLowerCase()
+          .includes(lower);
+        return inName || inDescription || inLocation;
+      })
+      .slice(0, 6);
+  }, [query, tours]);
+
+  const handleChange = (value: string) => {
+    setQuery(value);
+    onSearchChange?.(value);
   };
-
-  // debounce to avoid spamming API
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    const handler = debounce((q: string) => doSearch(q), 400);
-    handler(query);
-    return () => handler.cancel();
-  }, [query]);
 
   return (
     <section className="w-full py-10 px-6">
@@ -45,17 +48,13 @@ export const HeroSearch: React.FC = () => {
         <div className="flex gap-3 items-center justify-center">
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => handleChange(e.target.value)}
             placeholder="Поиск: Париж, пляж, горы..."
             className="w-2/3 p-3 rounded-2xl border border-border bg-white/70 backdrop-blur-sm"
           />
-          <button className="px-4 py-3 bg-[#00D4FF] text-white rounded-2xl">
-            Поиск
-          </button>
         </div>
 
         <div className="mt-4">
-          {loading && <div className="text-sm">Ищем...</div>}
           {suggestions.length > 0 && (
             <ul className="mt-2 grid grid-cols-3 gap-3">
               {suggestions.map((s) => (

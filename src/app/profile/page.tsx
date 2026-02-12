@@ -1,16 +1,48 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFavoriteStore } from "@/store";
 import { Header } from "@/components";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function ProfilePage() {
   const { favorites, clearFavorites } = useFavoriteStore();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        setUserEmail(data.user?.email ?? null);
+      })
+      .catch(() => {
+        setUserEmail(null);
+      });
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <Header />
       <main className="max-w-4xl mx-auto p-6">
         <h2 className="text-2xl font-semibold mb-4">Личный кабинет</h2>
+
+        <section className="mb-6">
+          <h3 className="font-semibold mb-2">Профиль</h3>
+          {supabase ? (
+            <p className="text-sm text-muted-foreground">
+              {userEmail
+                ? `Вы вошли как ${userEmail} (Supabase Auth)`
+                : "Гость. Подключите Supabase Auth, чтобы сохранять историю заказов в PostgreSQL."}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Supabase ещё не сконфигурирован. Задайте
+              NEXT_PUBLIC_SUPABASE_URL и NEXT_PUBLIC_SUPABASE_ANON_KEY, чтобы
+              включить авторизацию и хранение данных в PostgreSQL.
+            </p>
+          )}
+        </section>
 
         <section className="mb-6">
           <h3 className="font-semibold mb-2">Избранное ({favorites.length})</h3>

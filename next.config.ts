@@ -18,6 +18,9 @@ const withPWAConfig = withPWA({
       },
     },
   ],
+  fallbacks: {
+    document: "/offline",
+  },
 });
 
 const nextConfig: NextConfig = {

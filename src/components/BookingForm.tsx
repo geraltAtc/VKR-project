@@ -11,11 +11,26 @@ export const BookingForm: React.FC = () => {
   const handleCheckout = async () => {
     setLoading(true);
     try {
-      // Для демонстрации мы просто имитируем запрос на сервер
-      // Реальная интеграция: отправить items и создать PaymentIntent на сервере
-      await new Promise((r) => setTimeout(r, 800));
-      clearCart();
-      alert("Заказ создан (тестовый режим)");
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ items, email }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Ошибка при создании Stripe-сессии");
+      }
+
+      const data = (await response.json()) as { url?: string };
+      if (data.url) {
+        clearCart();
+        window.location.href = data.url;
+      } else {
+        throw new Error("Stripe не вернул ссылку на оплату");
+      }
     } catch (e) {
       console.error(e);
       alert("Ошибка при создании заказа");
