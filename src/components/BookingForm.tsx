@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 
 export const BookingForm: React.FC = () => {
-  const { items, clearCart } = useCartStore();
+  const { items, clearCart, removeFromCart } = useCartStore();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
 
@@ -56,17 +56,36 @@ export const BookingForm: React.FC = () => {
         />
       </div>
 
-      <div className="mb-3">
-        <ul>
-          {items.map((i) => (
-            <li key={i.id} className="flex justify-between py-1">
-              <span>
+      <div className="mb-3 space-y-1">
+        {items.map((i) => (
+          <div
+            key={i.id}
+            className="flex items-center justify-between gap-3 py-1 text-sm"
+          >
+            <div className="flex flex-col">
+              <span className="font-medium">
                 {i.name} x{i.quantity}
               </span>
-              <span>{i.price ? `$${i.price * i.quantity}` : "—"}</span>
-            </li>
-          ))}
-        </ul>
+              {i.price && (
+                <span className="text-xs text-muted-foreground">
+                  Цена заштучно: ${i.price}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="font-semibold">
+                {i.price ? `$${i.price * i.quantity}` : "—"}
+              </span>
+              <button
+                type="button"
+                onClick={() => removeFromCart(i.id)}
+                className="text-xs text-red-500 hover:underline"
+              >
+                Удалить
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="flex gap-2">
@@ -76,6 +95,14 @@ export const BookingForm: React.FC = () => {
           className="px-3 py-2 bg-[#00D4FF] text-white rounded-lg"
         >
           Оплатить (тест)
+        </button>
+        <button
+          type="button"
+          onClick={() => clearCart()}
+          disabled={loading}
+          className="px-3 py-2 border rounded-lg text-sm"
+        >
+          Очистить корзину
         </button>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { LatLngExpression } from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 interface MapMarker {
   id: string;
@@ -33,8 +34,6 @@ export const TourMap: React.FC<TourMapProps> = ({
   useEffect(() => {
     setIsMounted(true);
     if (typeof window !== "undefined") {
-      // Динамически подключаем Leaflet только на клиенте
-      import("leaflet/dist/leaflet.css");
       import("react-leaflet")
         .then((mod) => {
           setLeaflet(mod);
