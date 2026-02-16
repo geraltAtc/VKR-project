@@ -15,14 +15,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "VKR Tours - Поиск и бронирование туров",
+  title: "Lite.Travel - Поиск и бронирование туров",
   description:
     "Приложение для поиска, сравнения и бронирования туров по всему миру",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "VKR Tours",
+    title: "Lite.Travel",
   },
   formatDetection: {
     telephone: false,
