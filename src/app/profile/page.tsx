@@ -37,9 +37,9 @@ export default function ProfilePage() {
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Supabase ещё не сконфигурирован. Задайте
+              {/* Supabase ещё не сконфигурирован. Задайте
               NEXT_PUBLIC_SUPABASE_URL и NEXT_PUBLIC_SUPABASE_ANON_KEY, чтобы
-              включить авторизацию и хранение данных в PostgreSQL.
+              включить авторизацию и хранение данных в PostgreSQL. */}
             </p>
           )}
         </section>

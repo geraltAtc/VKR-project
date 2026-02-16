@@ -11,8 +11,10 @@ export default function Home() {
             Цифровой компас для путешествий
           </h1>
           <p className="text-sm md:text-base text-white/80 mb-6">
-            VKR Tours — прогрессивное веб‑приложение туристического агентства:
-            офлайн‑доступ, умный поиск туров, интерактивные карты, корзина,
+            Lite.Travel — прогрессивное веб‑приложение туристического агентства:
+            офлайн‑доступ, умный поиск туров, 
+						{/* интерактивные карты,  */}
+						корзина,
             избранное и сравнение предложений.
           </p>
           <div className="flex flex-wrap gap-3">
@@ -45,12 +47,12 @@ export default function Home() {
               без интернета.
             </p>
           </div>
-          <div className="rounded-2xl bg-white/10 backdrop-blur-md p-4">
+          {/* <div className="rounded-2xl bg-white/10 backdrop-blur-md p-4">
             <h3 className="font-semibold mb-1">Интерактивные карты</h3>
             <p className="text-xs text-white/80">
               Leaflet‑карты с ценами и локациями туров на одном экране.
             </p>
-          </div>
+          </div> */}
           <div className="rounded-2xl bg-white/10 backdrop-blur-md p-4">
             <h3 className="font-semibold mb-1">Умный поиск</h3>
             <p className="text-xs text-white/80">
@@ -58,12 +60,12 @@ export default function Home() {
               локациям.
             </p>
           </div>
-          <div className="rounded-2xl bg-white/10 backdrop-blur-md p-4">
+          {/* <div className="rounded-2xl bg-white/10 backdrop-blur-md p-4">
             <h3 className="font-semibold mb-1">Бронирование и оплаты</h3>
             <p className="text-xs text-white/80">
               Модуль бронирования с интеграцией Stripe в тестовом режиме.
             </p>
-          </div>
+          </div> */}
         </section>
       </main>
     </div>
