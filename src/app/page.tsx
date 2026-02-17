@@ -48,7 +48,7 @@ export default function Home() {
           <div className="rounded-2xl bg-white/10 backdrop-blur-md p-4">
             <h3 className="font-semibold mb-1">Интерактивные карты</h3>
             <p className="text-xs text-white/80">
-              Leaflet‑карты с ценами и локациями туров на одном экране.
+              MapLibre‑карты с ценами и локациями туров на одном экране.
             </p>
           </div>
           <div className="rounded-2xl bg-white/10 backdrop-blur-md p-4">
