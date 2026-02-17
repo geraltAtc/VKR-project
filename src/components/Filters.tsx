@@ -58,7 +58,7 @@ export const Filters: React.FC<FiltersProps> = ({ onChange }) => {
         </select>
       </div>
 
-      {/* <div className="mb-3">
+      <div className="mb-3">
         <label htmlFor="rating" className="text-sm">
           Рейтинг
         </label>
@@ -74,7 +74,7 @@ export const Filters: React.FC<FiltersProps> = ({ onChange }) => {
             </button>
           ))}
         </div>
-      </div> */}
+      </div>
 
       <div className="flex gap-2">
         <button

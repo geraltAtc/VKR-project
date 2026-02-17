@@ -54,9 +54,9 @@ export const Header: React.FC = () => {
           </div>
           <div>
             <h1 className="text-lg font-semibold text-[#1A2B48]">Lite.Travel</h1>
-            {/* <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Цифровой компас — Многослойное стекло
-            </p> */}
+            </p>
           </div>
         </Link>
       </div>

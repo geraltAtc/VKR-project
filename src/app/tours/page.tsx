@@ -8,8 +8,8 @@ import {
   ComparisonModal,
   BookingForm,
   TourCard,
-  // TourMap,
-  // PwaBenefits,
+  TourMap,
+  PwaBenefits,
 } from "@/components";
 import { tourService } from "@/services";
 import type { Tour } from "@/store/favoriteStore";
@@ -92,7 +92,7 @@ export default function ToursPage() {
         tours={tours}
         onSearchChange={(value) => setSearchQuery(value)}
       />
-      {/* <PwaBenefits /> */}
+      <PwaBenefits />
 
       <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="col-span-1">
@@ -120,7 +120,7 @@ export default function ToursPage() {
         </div>
 
         <aside className="col-span-1">
-          {/* <div className="mb-4">
+          <div className="mb-4">
             <h4 className="font-semibold">Карта</h4>
           </div>
           <div className="h-96">
@@ -130,7 +130,7 @@ export default function ToursPage() {
                 markers[0] ? [markers[0].lat, markers[0].lng] : [51.505, -0.09]
               }
             />
-          </div> */}
+          </div>
 
           <div className="mt-4">
             <BookingForm />
