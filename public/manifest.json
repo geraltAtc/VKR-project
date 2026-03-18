@@ -1,13 +1,13 @@
 {
-  "name": "VKR Tours",
-  "short_name": "Tours",
-  "description": "Приложение для поиска и бронирования туров",
+  "name": "lite.travel",
+  "short_name": "lite.travel",
+  "description": "Электронный гид туриста: отель, карта, чек-лист и офлайн-доступ.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#0066cc",
+  "theme_color": "#1A2B48",
   "icons": [
     {
       "src": "/globe.svg",
@@ -39,10 +39,10 @@
   "categories": ["travel", "lifestyle"],
   "shortcuts": [
     {
-      "name": "Поиск туров",
-      "short_name": "Поиск",
-      "description": "Быстрый доступ к поиску туров",
-      "url": "/search",
+      "name": "Мои туры",
+      "short_name": "Туры",
+      "description": "Открыть список туров и гидов",
+      "url": "/tours",
       "icons": [
         {
           "src": "/globe.svg",

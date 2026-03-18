@@ -1,68 +1,85 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Header, HeroSearch, TourCard } from "@/components";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { Header } from "@/components";
 import { tourService } from "@/services";
-import type { Tour } from "@/store/favoriteStore";
+import type { TourSummary } from "@/types/travel";
 
 export default function SearchPage() {
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tours, setTours] = useState<TourSummary[]>([]);
   const [query, setQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-    setLoading(true);
+    let active = true;
     tourService
       .getAllTours()
       .then((data) => {
-        if (!mounted) return;
-        setTours(data || []);
-        setLoading(false);
+        if (!active) return;
+        setTours(data);
       })
-      .catch((e) => {
-        console.error(e);
-        setLoading(false);
+      .finally(() => {
+        if (active) setIsLoading(false);
       });
 
     return () => {
-      mounted = false;
+      active = false;
     };
   }, []);
 
-  const filtered = tours.filter((t) => {
-    if (!query) return true;
+  const filtered = useMemo(() => {
+    if (!query) return tours;
     const lower = query.toLowerCase();
-    const inName = t.name.toLowerCase().includes(lower);
-    const inDescription = t.description?.toLowerCase().includes(lower);
-    const inLocation = (t as any).location
-      ?.toLowerCase()
-      .includes(lower);
-    return inName || inDescription || inLocation;
-  });
+    return tours.filter((tour) =>
+      [tour.city, tour.country, tour.title, tour.hotelName]
+        .join(" ")
+        .toLowerCase()
+        .includes(lower),
+    );
+  }, [query, tours]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F8FAFC] to-white">
+    <div className="min-h-screen bg-[#F8FAFC]">
       <Header />
-      <HeroSearch tours={tours} onSearchChange={setQuery} />
-
-      <main className="max-w-5xl mx-auto px-6 pb-10">
-        <h2 className="text-xl font-semibold mb-2">Результаты поиска</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          {loading
-            ? "Загрузка..."
-            : `${filtered.length} туров по запросу "${query || "все"}"`}
+      <main className="mx-auto max-w-5xl px-4 py-8">
+        <h1 className="text-2xl font-semibold text-[#1A2B48]">Поиск по направлениям</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Ищите тур по городу, стране или названию отеля.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {loading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={`skeleton-${i}`}
-                  className="h-44 bg-gray-100 animate-pulse rounded-2xl"
-                />
-              ))
-            : filtered.map((t) => <TourCard key={t.id} tour={t} />)}
+        <input
+          className="mt-4 w-full rounded-xl border border-slate-300 px-4 py-2 text-sm outline-none ring-[#00D4FF] focus:ring-2"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Например: Барселона, Испания, Hotel..."
+        />
+
+        <div className="mt-6 space-y-3">
+          {isLoading && <p className="text-sm text-slate-500">Загрузка...</p>}
+
+          {!isLoading && filtered.length === 0 && (
+            <p className="text-sm text-slate-600">Ничего не найдено.</p>
+          )}
+
+          {filtered.map((tour) => (
+            <article
+              key={tour.id}
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+            >
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                {tour.city}, {tour.country}
+              </p>
+              <h2 className="text-base font-semibold text-[#1A2B48]">{tour.title}</h2>
+              <p className="text-sm text-slate-600">{tour.hotelName}</p>
+              <Link
+                href={`/tours/${tour.id}`}
+                className="mt-3 inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-xs text-slate-700"
+              >
+                Перейти к гиду
+              </Link>
+            </article>
+          ))}
         </div>
       </main>
     </div>

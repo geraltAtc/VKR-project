@@ -1,261 +1,213 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
-interface MapMarker {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  description?: string;
-  price?: number;
-}
-
-type LatLngTuple = [number, number];
+import type { Attraction } from "@/types/travel";
 
 interface TourMapProps {
-  markers: MapMarker[];
-  center?: LatLngTuple;
-  zoom?: number;
+  hotel: {
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+  };
+  attractions: Attraction[];
   height?: string;
 }
 
-interface MapLibreMap {
-  addControl: (control: unknown, position?: string) => void;
-  jumpTo: (options: Record<string, unknown>) => void;
-  resize: () => void;
-  remove: () => void;
+interface YandexMapInstance {
+  destroy: () => void;
+  geoObjects: {
+    add: (object: unknown) => void;
+  };
+  setBounds: (bounds: unknown, options?: Record<string, unknown>) => void;
 }
 
-interface MapLibrePopup {
-  setHTML: (html: string) => MapLibrePopup;
+interface YandexMapsApi {
+  ready: (callback: () => void) => void;
+  Map: new (
+    element: HTMLElement,
+    state: Record<string, unknown>,
+    options?: Record<string, unknown>,
+  ) => YandexMapInstance;
+  Placemark: new (
+    coordinates: number[],
+    properties?: Record<string, unknown>,
+    options?: Record<string, unknown>,
+  ) => unknown;
 }
-
-interface MapLibreMarker {
-  setLngLat: (lngLat: [number, number]) => MapLibreMarker;
-  setPopup: (popup: MapLibrePopup) => MapLibreMarker;
-  addTo: (map: MapLibreMap) => MapLibreMarker;
-  remove: () => void;
-}
-
-type MapLibreModule = {
-  Map: new (options: Record<string, unknown>) => MapLibreMap;
-  Marker: new (options?: Record<string, unknown>) => MapLibreMarker;
-  Popup: new (options?: Record<string, unknown>) => MapLibrePopup;
-  NavigationControl: new () => unknown;
-};
 
 declare global {
   interface Window {
-    maplibregl?: MapLibreModule;
+    ymaps?: YandexMapsApi;
   }
 }
 
-const MAPLIBRE_SCRIPT_ID = "maplibre-script";
-const MAPLIBRE_CSS_ID = "maplibre-css";
-const MAPLIBRE_SCRIPT_URL =
-  "https://unpkg.com/maplibre-gl@5.10.0/dist/maplibre-gl.js";
-const MAPLIBRE_CSS_URL =
-  "https://unpkg.com/maplibre-gl@5.10.0/dist/maplibre-gl.css";
-const MAP_STYLE_URL = "https://demotiles.maplibre.org/style.json";
+const YANDEX_SCRIPT_ID = "yandex-maps-script";
+const MAP_CONTAINER_ID = "tour-ymap";
 
-const escapeHtml = (value: string) =>
-  value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-
-const popupMarkup = (marker: MapMarker) => {
-  const name = escapeHtml(marker.name);
-  const description = marker.description ? escapeHtml(marker.description) : "";
-  const price =
-    marker.price != null
-      ? `<p style="margin:0 0 4px 0;font-weight:600;color:#00D4FF;">$${marker.price.toLocaleString()}</p>`
-      : "";
-
-  return `
-    <div style="font-size:14px;line-height:1.4;max-width:220px;">
-      <h4 style="margin:0 0 6px 0;font-weight:700;">${name}</h4>
-      ${price}
-      ${description ? `<p style="margin:0;">${description}</p>` : ""}
-    </div>
-  `;
-};
-
-const loadMapLibre = (): Promise<MapLibreModule> =>
+const loadYandexMaps = (apiKey: string): Promise<YandexMapsApi> =>
   new Promise((resolve, reject) => {
     if (typeof window === "undefined") {
       reject(new Error("Window is not available"));
       return;
     }
 
-    if (window.maplibregl) {
-      resolve(window.maplibregl);
+    if (window.ymaps) {
+      resolve(window.ymaps);
       return;
     }
 
-    if (!document.getElementById(MAPLIBRE_CSS_ID)) {
-      const link = document.createElement("link");
-      link.id = MAPLIBRE_CSS_ID;
-      link.rel = "stylesheet";
-      link.href = MAPLIBRE_CSS_URL;
-      document.head.appendChild(link);
-    }
+    const existing = document.getElementById(YANDEX_SCRIPT_ID) as
+      | HTMLScriptElement
+      | null;
 
-    const onReady = () => {
-      if (window.maplibregl) {
-        resolve(window.maplibregl);
-      } else {
-        reject(new Error("MapLibre loaded but global object is missing"));
+    const scriptUrl = `https://api-maps.yandex.ru/2.1/?apikey=${encodeURIComponent(
+      apiKey,
+    )}&lang=ru_RU`;
+
+    const handleReady = () => {
+      if (!window.ymaps) {
+        reject(new Error("Yandex Maps global object is missing"));
+        return;
       }
+
+      window.ymaps.ready(() => resolve(window.ymaps as YandexMapsApi));
     };
 
-    const onError = () => reject(new Error("Failed to load maplibre-gl"));
-
-    const existingScript = document.getElementById(
-      MAPLIBRE_SCRIPT_ID,
-    ) as HTMLScriptElement | null;
-
-    if (existingScript) {
-      existingScript.addEventListener("load", onReady, { once: true });
-      existingScript.addEventListener("error", onError, { once: true });
+    if (existing) {
+      existing.addEventListener("load", handleReady, { once: true });
+      existing.addEventListener("error", () => reject(new Error("Script load error")), {
+        once: true,
+      });
       return;
     }
 
     const script = document.createElement("script");
-    script.id = MAPLIBRE_SCRIPT_ID;
-    script.src = MAPLIBRE_SCRIPT_URL;
+    script.id = YANDEX_SCRIPT_ID;
+    script.src = scriptUrl;
     script.async = true;
-    script.addEventListener("load", onReady, { once: true });
-    script.addEventListener("error", onError, { once: true });
+    script.addEventListener("load", handleReady, { once: true });
+    script.addEventListener("error", () => reject(new Error("Script load error")), {
+      once: true,
+    });
     document.body.appendChild(script);
   });
 
 export const TourMap: React.FC<TourMapProps> = ({
-  markers,
-  center = [51.505, -0.09],
-  zoom = 13,
-  height = "400px",
+  hotel,
+  attractions,
+  height = "440px",
 }) => {
+  const mapRef = useRef<YandexMapInstance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [maplibre, setMapLibre] = useState<MapLibreModule | null>(null);
-
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<MapLibreMap | null>(null);
-  const markerRefs = useRef<MapLibreMarker[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    let active = true;
+    const apiKey = process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY;
+    if (!apiKey) {
+      setErrorMessage(
+        "Ключ Яндекс.Карт не задан. Укажите NEXT_PUBLIC_YANDEX_MAPS_API_KEY в .env.local.",
+      );
+      setIsLoading(false);
+      return;
+    }
 
-    loadMapLibre()
-      .then((mod) => {
-        if (!active) return;
-        setMapLibre(mod);
-        setHasError(false);
+    let mounted = true;
+
+    loadYandexMaps(apiKey)
+      .then((ymaps) => {
+        if (!mounted) return;
+
+        const container = document.getElementById(MAP_CONTAINER_ID);
+        if (!container) {
+          setErrorMessage("Не удалось инициализировать контейнер карты.");
+          return;
+        }
+
+        const map = new ymaps.Map(
+          container,
+          {
+            center: [hotel.lat, hotel.lng],
+            zoom: 13,
+            controls: ["zoomControl", "fullscreenControl"],
+          },
+          { suppressMapOpenBlock: true },
+        );
+
+        const hotelPlacemark = new ymaps.Placemark(
+          [hotel.lat, hotel.lng],
+          {
+            balloonContentHeader: hotel.name,
+            balloonContentBody: hotel.address,
+            hintContent: "Отель",
+          },
+          {
+            preset: "islands#blueHotelIcon",
+          },
+        );
+
+        map.geoObjects.add(hotelPlacemark);
+
+        for (const attraction of attractions) {
+          const place = new ymaps.Placemark(
+            [attraction.lat, attraction.lng],
+            {
+              balloonContentHeader: attraction.name,
+              balloonContentBody: `${attraction.address}<br/>${attraction.workingHours}`,
+              hintContent: attraction.name,
+            },
+            { preset: "islands#nightAttractionIcon" },
+          );
+
+          map.geoObjects.add(place);
+        }
+
+        mapRef.current = map;
       })
-      .catch((err) => {
-        console.error("Failed to load MapLibre GL JS", err);
-        if (!active) return;
-        setHasError(true);
+      .catch((error) => {
+        setErrorMessage(
+          `Не удалось загрузить Яндекс.Карты: ${error instanceof Error ? error.message : "unknown error"}`,
+        );
       })
       .finally(() => {
-        if (active) setIsLoading(false);
+        if (mounted) setIsLoading(false);
       });
 
     return () => {
-      active = false;
+      mounted = false;
+      if (mapRef.current) {
+        mapRef.current.destroy();
+        mapRef.current = null;
+      }
     };
-  }, []);
-
-  useEffect(() => {
-    if (!maplibre || !mapContainerRef.current || mapRef.current) {
-      return;
-    }
-
-    const map = new maplibre.Map({
-      container: mapContainerRef.current,
-      style: MAP_STYLE_URL,
-      center: [center[1], center[0]],
-      zoom,
-      attributionControl: true,
-    });
-
-    map.addControl(new maplibre.NavigationControl(), "top-right");
-    mapRef.current = map;
-
-    return () => {
-      markerRefs.current.forEach((marker) => marker.remove());
-      markerRefs.current = [];
-      map.remove();
-      mapRef.current = null;
-    };
-  }, [maplibre, center, zoom]);
-
-  useEffect(() => {
-    if (!maplibre || !mapRef.current) {
-      return;
-    }
-
-    const map = mapRef.current;
-
-    map.jumpTo({
-      center: [center[1], center[0]],
-      zoom,
-    });
-
-    markerRefs.current.forEach((marker) => marker.remove());
-    markerRefs.current = [];
-
-    markers.forEach((marker) => {
-      const popup = new maplibre.Popup({ offset: 18 }).setHTML(
-        popupMarkup(marker),
-      );
-
-      const mapMarker = new maplibre.Marker({ color: "#00D4FF" })
-        .setLngLat([marker.lng, marker.lat])
-        .setPopup(popup)
-        .addTo(map);
-
-      markerRefs.current.push(mapMarker);
-    });
-  }, [maplibre, markers, center, zoom]);
-
-  useEffect(() => {
-    if (!mapRef.current) {
-      return;
-    }
-
-    mapRef.current.resize();
-  }, [height]);
+  }, [attractions, hotel.address, hotel.lat, hotel.lng, hotel.name]);
 
   if (isLoading) {
     return (
       <div
         style={{ height }}
-        className="bg-gray-100 rounded-lg flex items-center justify-center"
+        className="flex items-center justify-center rounded-2xl bg-slate-100 text-slate-500"
       >
-        <p className="text-gray-500">Загрузка карты...</p>
+        Загрузка карты...
       </div>
     );
   }
 
-  if (hasError) {
+  if (errorMessage) {
     return (
       <div
         style={{ height }}
-        className="bg-gray-100 rounded-lg flex items-center justify-center"
+        className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"
       >
-        <p className="text-gray-500">Не удалось загрузить карту.</p>
+        {errorMessage}
       </div>
     );
   }
 
   return (
-    <div style={{ height }} className="rounded-lg overflow-hidden">
-      <div ref={mapContainerRef} className="h-full w-full z-0" />
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div id={MAP_CONTAINER_ID} style={{ height }} />
     </div>
   );
 };
+

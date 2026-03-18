@@ -4,92 +4,89 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useNetworkStatus } from "@/hooks";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 export const Header: React.FC = () => {
   const { isOnline } = useNetworkStatus();
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [installEvent, setInstallEvent] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
-    const handler = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
+    const onBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallEvent(event as BeforeInstallPromptEvent);
     };
-    const installedHandler = () => setInstalled(true);
 
-    globalThis.addEventListener(
-      "beforeinstallprompt",
-      handler as EventListener,
-    );
-    globalThis.addEventListener(
-      "appinstalled",
-      installedHandler as EventListener,
-    );
+    const onInstalled = () => setInstalled(true);
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onInstalled);
 
     return () => {
-      globalThis.removeEventListener(
-        "beforeinstallprompt",
-        handler as EventListener,
-      );
-      globalThis.removeEventListener(
-        "appinstalled",
-        installedHandler as EventListener,
-      );
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
 
-  const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const choice = await deferredPrompt?.userChoice;
-    if (choice?.outcome === "accepted") setInstalled(true);
-    setDeferredPrompt(null);
+  const installPwa = async () => {
+    if (!installEvent) return;
+    await installEvent.prompt();
+    const result = await installEvent.userChoice;
+    if (result.outcome === "accepted") {
+      setInstalled(true);
+    }
+    setInstallEvent(null);
   };
 
   return (
-    <header className="w-full py-4 px-6 flex items-center justify-between bg-white/60 backdrop-blur-md glass-shadow">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-30 border-b border-white/30 bg-white/80 backdrop-blur">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#1A2B48] to-[#00D4FF] flex items-center justify-center text-white font-bold">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1A2B48] text-lg text-white">
             🧭
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-[#1A2B48]">Lite.Travel</h1>
-            <p className="text-xs text-muted-foreground">
-              Цифровой компас — Многослойное стекло
-            </p>
+            <p className="text-lg font-semibold text-[#1A2B48]">lite.travel</p>
+            <p className="text-xs text-slate-500">электронный гид туриста</p>
           </div>
         </Link>
-      </div>
 
-      <nav className="flex items-center gap-6 text-sm">
-        <Link href="/tours" className="text-[#1A2B48] hover:text-[#00D4FF]">
-          Туры
-        </Link>
-        <Link href="/search" className="text-[#1A2B48] hover:text-[#00D4FF]">
-          Поиск
-        </Link>
-        <Link href="/profile" className="text-[#1A2B48] hover:text-[#00D4FF]">
-          Профиль
-        </Link>
+        <nav className="flex items-center gap-4 text-sm">
+          <Link href="/tours" className="text-slate-700 hover:text-[#1A2B48]">
+            Мои туры
+          </Link>
+          <Link href="/search" className="text-slate-700 hover:text-[#1A2B48]">
+            Поиск мест
+          </Link>
+          <Link href="/profile" className="text-slate-700 hover:text-[#1A2B48]">
+            Чек-листы
+          </Link>
+          <Link href="/admin" className="text-slate-700 hover:text-[#1A2B48]">
+            Админ
+          </Link>
 
-        <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-          <div className="flex items-center gap-2">
+          <span className="ml-2 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-2 py-1 text-xs">
             <span
-              className={`w-3 h-3 rounded-full ${isOnline ? "bg-cyan-400" : "bg-gray-400"}`}
-            ></span>
-            <span className="text-sm">{isOnline ? "Online" : "Offline"}</span>
-          </div>
+              className={`h-2.5 w-2.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-slate-400"}`}
+            />
+            {isOnline ? "Online" : "Offline"}
+          </span>
 
-          {deferredPrompt && !installed && (
+          {installEvent && !installed && (
             <button
-              onClick={handleInstall}
-              className="px-3 py-1 rounded-lg bg-cyan-400 text-white text-xs"
+              onClick={installPwa}
+              className="rounded-xl bg-[#00D4FF] px-3 py-1.5 text-xs font-semibold text-[#1A2B48]"
             >
               Установить
             </button>
           )}
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
   );
 };
+

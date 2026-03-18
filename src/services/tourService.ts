@@ -1,14 +1,64 @@
-// API сервис для работы с турами
+import type {
+  Attraction,
+  ChecklistItem,
+  CountryInfo,
+  TourDetails,
+  TourSummary,
+  WeatherForecast,
+} from "@/types/travel";
 
-interface Tour {
+interface AdminTourPayload {
   id: string;
+  title: string;
+  city: string;
+  country: string;
+  startDate: string;
+  endDate: string;
+  hotelName: string;
+  hotelAddress: string;
+  hotelPhone: string;
+  checkInTime: string;
+  checkOutTime: string;
+  roomDetails: string;
+  transferDetails: string;
+  emergencyPhone: string;
+  operatorPhone: string;
+  hotelLat: number;
+  hotelLng: number;
+}
+
+interface AdminAttractionPayload {
+  tourId: string;
   name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  workingHours: string;
+  entryPrice: string;
+  visitDuration: string;
   description: string;
-  price: number;
-  image: string;
-  duration: string;
-  location: string;
-  rating?: number;
+  tips: string;
+  category: string;
+}
+
+interface AdminCountryInfoPayload {
+  tourId: string;
+  currencyInfo: string;
+  languageInfo: string;
+  transportInfo: string;
+  climateInfo: string;
+  foodInfo: string;
+  safetyInfo: string;
+  cultureInfo: string;
+  usefulContacts: string;
+}
+
+interface AdminChecklistPayload {
+  tourId: string;
+  category: string;
+  title: string;
+  note: string;
+  required: boolean;
 }
 
 class TourService {
@@ -18,102 +68,87 @@ class TourService {
     this.baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
   }
 
-  /**
-   * Получить список всех туров
-   */
-  async getAllTours(): Promise<Tour[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/tours`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+  private async request<T>(path: string, init?: RequestInit): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+      ...init,
+    });
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Failed to fetch tours:", error);
-      throw error;
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || `HTTP ${response.status}`);
     }
+
+    return (await response.json()) as T;
   }
 
-  /**
-   * Получить тур по ID
-   */
-  async getTourById(id: string): Promise<Tour> {
-    try {
-      const response = await fetch(`${this.baseUrl}/tours/${id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error(`Failed to fetch tour with id ${id}:`, error);
-      throw error;
-    }
+  async getAllTours(): Promise<TourSummary[]> {
+    return this.request<TourSummary[]>("/tours");
   }
 
-  /**
-   * Похожие туры
-   */
-  async getSimilarTours(tourId: string): Promise<Tour[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/tours/${tourId}/similar`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error(`Failed to fetch similar tours:`, error);
-      throw error;
-    }
+  async getTourById(id: string): Promise<TourDetails> {
+    return this.request<TourDetails>(`/tours/${id}`);
   }
 
-  /**
-   * Поиск туров
-   */
-  async searchTours(query: string): Promise<Tour[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/tours/search`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query }),
-      });
+  async getWeather(lat: number, lng: number, tourId?: string) {
+    const params = new URLSearchParams({
+      lat: String(lat),
+      lng: String(lng),
+    });
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Failed to search tours:", error);
-      throw error;
+    if (tourId) {
+      params.set("tourId", tourId);
     }
+
+    return this.request<WeatherForecast>(`/weather?${params.toString()}`);
   }
+
+  async createTour(payload: AdminTourPayload, token: string) {
+    return this.request<{ id: string; message: string }>("/admin/tours", {
+      method: "POST",
+      headers: { "x-admin-token": token },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async createAttraction(payload: AdminAttractionPayload, token: string) {
+    return this.request<{ id: string; message: string }>("/admin/attractions", {
+      method: "POST",
+      headers: { "x-admin-token": token },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async upsertCountryInfo(payload: AdminCountryInfoPayload, token: string) {
+    return this.request<{ message: string }>("/admin/country-info", {
+      method: "POST",
+      headers: { "x-admin-token": token },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async createChecklistItem(payload: AdminChecklistPayload, token: string) {
+    return this.request<{ id: string; message: string }>("/admin/checklist", {
+      method: "POST",
+      headers: { "x-admin-token": token },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Возвращает пустые структуры, удобно для UI с optimistic flow.
+  static emptyCollections: {
+    attractions: Attraction[];
+    checklistItems: ChecklistItem[];
+    countryInfo: CountryInfo | null;
+  } = {
+    attractions: [],
+    checklistItems: [],
+    countryInfo: null,
+  };
 }
 
 export const tourService = new TourService();
+

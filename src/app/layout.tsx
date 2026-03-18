@@ -15,9 +15,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Lite.Travel - Поиск и бронирование туров",
+  title: "lite.travel — электронный гид туриста",
   description:
-    "Приложение для поиска, сравнения и бронирования туров по всему миру",
+    "PWA-приложение для туристов: отель, трансфер, карта, чек-лист, информация о стране и погода.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -42,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ru">
       <body className={`${plusJakarta.variable} ${inter.variable} antialiased`}>
         {children}
       </body>

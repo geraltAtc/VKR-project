@@ -1,5 +1,7 @@
 export { TourCard } from "./TourCard";
 export { TourMap } from "./TourMap";
+export { ChecklistPanel } from "./ChecklistPanel";
+export { WeatherPanel } from "./WeatherPanel";
 export { Header } from "./Header";
 export { HeroSearch } from "./HeroSearch";
 export { Filters } from "./Filters";

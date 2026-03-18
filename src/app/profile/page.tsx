@@ -1,81 +1,83 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useFavoriteStore } from "@/store";
 import { Header } from "@/components";
-import { supabase } from "@/lib/supabaseClient";
+import { tourService } from "@/services";
+import type { TourSummary } from "@/types/travel";
+
+const checklistStoragePrefix = "lite-travel-checklist:";
 
 export default function ProfilePage() {
-  const { favorites, clearFavorites } = useFavoriteStore();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [tours, setTours] = useState<TourSummary[]>([]);
+  const [checklistState, setChecklistState] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    if (!supabase) return;
-    supabase.auth
-      .getUser()
-      .then(({ data }) => {
-        setUserEmail(data.user?.email ?? null);
-      })
-      .catch(() => {
-        setUserEmail(null);
-      });
+    let active = true;
+    tourService.getAllTours().then((data) => {
+      if (!active) return;
+      setTours(data);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const progress: Record<string, number> = {};
+
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(checklistStoragePrefix)) continue;
+      const tourId = key.replace(checklistStoragePrefix, "");
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      try {
+        const parsed = JSON.parse(raw) as Record<string, boolean>;
+        progress[tourId] = Object.values(parsed).filter(Boolean).length;
+      } catch {
+        progress[tourId] = 0;
+      }
+    }
+
+    setChecklistState(progress);
   }, []);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <Header />
-      <main className="max-w-4xl mx-auto p-6">
-        <h2 className="text-2xl font-semibold mb-4">Личный кабинет</h2>
 
-        <section className="mb-6">
-          <h3 className="font-semibold mb-2">Профиль</h3>
-          {supabase ? (
-            <p className="text-sm text-muted-foreground">
-              {userEmail
-                ? `Вы вошли как ${userEmail} (Supabase Auth)`
-                : "Гость. Подключите Supabase Auth, чтобы сохранять историю заказов в PostgreSQL."}
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Supabase ещё не сконфигурирован. Задайте
-              NEXT_PUBLIC_SUPABASE_URL и NEXT_PUBLIC_SUPABASE_ANON_KEY, чтобы
-              включить авторизацию и хранение данных в PostgreSQL.
-            </p>
-          )}
-        </section>
+      <main className="mx-auto max-w-5xl px-4 py-8">
+        <h1 className="text-2xl font-semibold text-[#1A2B48]">Мой кабинет туриста</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Здесь отображается локальный прогресс по чек-листам, который доступен даже
+          в офлайне.
+        </p>
 
-        <section className="mb-6">
-          <h3 className="font-semibold mb-2">Избранное ({favorites.length})</h3>
-          {favorites.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              У вас ещё нет избранных туров.
-            </p>
-          ) : (
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {favorites.map((f) => (
-                <li key={f.id} className="p-3 bg-white rounded-2xl shadow-sm">
-                  {f.name}
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="mt-3">
-            <button
-              onClick={() => clearFavorites()}
-              className="px-3 py-2 border rounded"
+        <div className="mt-6 grid gap-4">
+          {tours.map((tour) => (
+            <article
+              key={tour.id}
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
             >
-              Очистить избранное
-            </button>
-          </div>
-        </section>
-
-        <section>
-          <h3 className="font-semibold mb-2">История заказов (локально)</h3>
-          <p className="text-sm text-muted-foreground">
-            История доступна офлайн и хранится локально в браузере.
-          </p>
-        </section>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                {tour.city}, {tour.country}
+              </p>
+              <h2 className="text-base font-semibold text-[#1A2B48]">{tour.title}</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Выполнено пунктов: {checklistState[tour.id] ?? 0}
+              </p>
+              <Link
+                href={`/tours/${tour.id}`}
+                className="mt-3 inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-xs text-slate-700"
+              >
+                Открыть тур
+              </Link>
+            </article>
+          ))}
+        </div>
       </main>
     </div>
   );
 }
+
