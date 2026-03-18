@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { ChecklistPanel, Header, TourMap, WeatherPanel } from "@/components";
 import { tourService } from "@/services";
-import type { Attraction, CountryInfo, TourDetails } from "@/types/travel";
+import type { CountryInfo, TourDetails } from "@/types/travel";
 
 const countryBlocks = (countryInfo: CountryInfo | null) => [
   { title: "Валюта и деньги", value: countryInfo?.currencyInfo },
@@ -18,17 +18,13 @@ const countryBlocks = (countryInfo: CountryInfo | null) => [
   { title: "Полезные контакты", value: countryInfo?.usefulContacts },
 ];
 
-const routeLink = (
-  hotelLat: number,
-  hotelLng: number,
-  attraction: Attraction,
-) =>
-  `https://yandex.ru/maps/?rtext=${hotelLat},${hotelLng}~${attraction.lat},${attraction.lng}&rtt=mt`;
-
 export default function TourDetailsPage() {
   const params = useParams<{ id: string }>();
   const tourId = params?.id;
   const [tour, setTour] = useState<TourDetails | null>(null);
+  const [selectedAttractionId, setSelectedAttractionId] = useState<string | undefined>(
+    undefined,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +41,7 @@ export default function TourDetailsPage() {
       .then((data) => {
         if (!active) return;
         setTour(data);
+        setSelectedAttractionId(data.attractions[0]?.id);
       })
       .catch((reason) => {
         if (!active) return;
@@ -135,6 +132,7 @@ export default function TourDetailsPage() {
                     lng: tour.hotelLng,
                   }}
                   attractions={tour.attractions}
+                  selectedAttractionId={selectedAttractionId}
                 />
               </article>
 
@@ -173,14 +171,18 @@ export default function TourDetailsPage() {
                       </p>
                       <p className="mt-2 text-xs text-[#1A2B48]">Совет: {attraction.tips}</p>
 
-                      <a
-                        href={routeLink(tour.hotelLat, tour.hotelLng, attraction)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-3 inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-xs text-slate-700"
+                      <button
+                        onClick={() => setSelectedAttractionId(attraction.id)}
+                        className={`mt-3 inline-flex rounded-xl border px-3 py-1.5 text-xs ${
+                          selectedAttractionId === attraction.id
+                            ? "border-[#1A2B48] bg-[#1A2B48] text-white"
+                            : "border-slate-300 text-slate-700"
+                        }`}
                       >
-                        Построить маршрут в Яндекс.Картах
-                      </a>
+                        {selectedAttractionId === attraction.id
+                          ? "Маршрут отображается на карте"
+                          : "Показать маршрут на карте"}
+                      </button>
                     </article>
                   ))}
                 </div>
