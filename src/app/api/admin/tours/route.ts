@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isValidAdminToken } from "@/lib/adminAuth";
+import { isAdminRequestAuthorized } from "@/lib/adminAuth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 interface CreateTourBody {
@@ -34,8 +34,7 @@ const requiredStringFields: Array<keyof CreateTourBody> = [
 ];
 
 export async function POST(request: Request) {
-  const token = request.headers.get("x-admin-token");
-  if (!isValidAdminToken(token)) {
+  if (!isAdminRequestAuthorized(request)) {
     return NextResponse.json({ message: "Нет доступа." }, { status: 401 });
   }
 
@@ -94,3 +93,28 @@ export async function POST(request: Request) {
   return NextResponse.json({ id: body.id, message: "Тур сохранен." });
 }
 
+export async function DELETE(request: Request) {
+  if (!isAdminRequestAuthorized(request)) {
+    return NextResponse.json({ message: "Нет доступа." }, { status: 401 });
+  }
+
+  const supabase = createSupabaseServerClient();
+  if (!supabase) {
+    return NextResponse.json({ message: "Supabase не настроен." }, { status: 500 });
+  }
+
+  const body = (await request.json()) as { id?: string };
+  if (!body.id) {
+    return NextResponse.json({ message: "Поле id обязательно." }, { status: 400 });
+  }
+
+  const { error } = await supabase.from("tours").delete().eq("id", body.id);
+  if (error) {
+    return NextResponse.json(
+      { message: `Ошибка удаления тура: ${error.message}` },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({ message: "Тур удален." });
+}

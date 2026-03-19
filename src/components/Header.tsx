@@ -65,9 +65,6 @@ export const Header: React.FC = () => {
           <Link href="/profile" className="text-slate-700 hover:text-[#1A2B48]">
             Чек-листы
           </Link>
-          <Link href="/admin" className="text-slate-700 hover:text-[#1A2B48]">
-            Админ
-          </Link>
 
           <span className="ml-2 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-2 py-1 text-xs">
             <span
@@ -89,4 +86,3 @@ export const Header: React.FC = () => {
     </header>
   );
 };
-

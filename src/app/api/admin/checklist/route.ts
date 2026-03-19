@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { isValidAdminToken } from "@/lib/adminAuth";
+import { isAdminRequestAuthorized } from "@/lib/adminAuth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 interface CreateChecklistBody {
+  id?: string;
   tourId: string;
   category: string;
   title: string;
@@ -11,8 +12,7 @@ interface CreateChecklistBody {
 }
 
 export async function POST(request: Request) {
-  const token = request.headers.get("x-admin-token");
-  if (!isValidAdminToken(token)) {
+  if (!isAdminRequestAuthorized(request)) {
     return NextResponse.json({ message: "Нет доступа." }, { status: 401 });
   }
 
@@ -29,17 +29,20 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
-    .from("checklist_items")
-    .insert({
-      tour_id: body.tourId,
-      category: body.category,
-      title: body.title,
-      note: body.note ?? "",
-      is_required: body.required ?? false,
-    })
-    .select("id")
-    .single();
+  const payload = {
+    id: body.id,
+    tour_id: body.tourId,
+    category: body.category,
+    title: body.title,
+    note: body.note ?? "",
+    is_required: body.required ?? false,
+  };
+
+  const query = body.id
+    ? supabase.from("checklist_items").upsert(payload, { onConflict: "id" })
+    : supabase.from("checklist_items").insert(payload);
+
+  const { data, error } = await query.select("id").single();
 
   if (error || !data) {
     return NextResponse.json(
@@ -48,6 +51,8 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ id: data.id, message: "Пункт чек-листа сохранен." });
+  return NextResponse.json({
+    id: data.id,
+    message: body.id ? "Пункт чек-листа обновлен." : "Пункт чек-листа сохранен.",
+  });
 }
-

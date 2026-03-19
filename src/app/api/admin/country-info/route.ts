@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isValidAdminToken } from "@/lib/adminAuth";
+import { isAdminRequestAuthorized } from "@/lib/adminAuth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 interface UpsertCountryInfoBody {
@@ -15,8 +15,7 @@ interface UpsertCountryInfoBody {
 }
 
 export async function POST(request: Request) {
-  const token = request.headers.get("x-admin-token");
-  if (!isValidAdminToken(token)) {
+  if (!isAdminRequestAuthorized(request)) {
     return NextResponse.json({ message: "Нет доступа." }, { status: 401 });
   }
 

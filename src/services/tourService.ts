@@ -28,6 +28,7 @@ interface AdminTourPayload {
 }
 
 interface AdminAttractionPayload {
+  id?: string;
   tourId: string;
   name: string;
   address: string;
@@ -54,6 +55,7 @@ interface AdminCountryInfoPayload {
 }
 
 interface AdminChecklistPayload {
+  id?: string;
   tourId: string;
   category: string;
   title: string;
@@ -106,35 +108,72 @@ class TourService {
     return this.request<WeatherForecast>(`/weather?${params.toString()}`);
   }
 
-  async createTour(payload: AdminTourPayload, token: string) {
+  async adminLogin(token: string) {
+    return this.request<{ message: string }>("/admin/login", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+      credentials: "same-origin",
+    });
+  }
+
+  async adminLogout() {
+    return this.request<{ message: string }>("/admin/logout", {
+      method: "POST",
+      credentials: "same-origin",
+    });
+  }
+
+  async createTour(payload: AdminTourPayload) {
     return this.request<{ id: string; message: string }>("/admin/tours", {
       method: "POST",
-      headers: { "x-admin-token": token },
+      credentials: "same-origin",
       body: JSON.stringify(payload),
     });
   }
 
-  async createAttraction(payload: AdminAttractionPayload, token: string) {
+  async deleteTour(id: string) {
+    return this.request<{ message: string }>("/admin/tours", {
+      method: "DELETE",
+      credentials: "same-origin",
+      body: JSON.stringify({ id }),
+    });
+  }
+
+  async createAttraction(payload: AdminAttractionPayload) {
     return this.request<{ id: string; message: string }>("/admin/attractions", {
       method: "POST",
-      headers: { "x-admin-token": token },
+      credentials: "same-origin",
       body: JSON.stringify(payload),
     });
   }
 
-  async upsertCountryInfo(payload: AdminCountryInfoPayload, token: string) {
+  async deleteAttraction(id: string) {
+    return this.request<{ message: string }>(`/admin/attractions/${id}`, {
+      method: "DELETE",
+      credentials: "same-origin",
+    });
+  }
+
+  async upsertCountryInfo(payload: AdminCountryInfoPayload) {
     return this.request<{ message: string }>("/admin/country-info", {
       method: "POST",
-      headers: { "x-admin-token": token },
+      credentials: "same-origin",
       body: JSON.stringify(payload),
     });
   }
 
-  async createChecklistItem(payload: AdminChecklistPayload, token: string) {
+  async createChecklistItem(payload: AdminChecklistPayload) {
     return this.request<{ id: string; message: string }>("/admin/checklist", {
       method: "POST",
-      headers: { "x-admin-token": token },
+      credentials: "same-origin",
       body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteChecklistItem(id: string) {
+    return this.request<{ message: string }>(`/admin/checklist/${id}`, {
+      method: "DELETE",
+      credentials: "same-origin",
     });
   }
 
@@ -151,4 +190,3 @@ class TourService {
 }
 
 export const tourService = new TourService();
-

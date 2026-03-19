@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { isValidAdminToken } from "@/lib/adminAuth";
+import { isAdminRequestAuthorized } from "@/lib/adminAuth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 interface CreateAttractionBody {
+  id?: string;
   tourId: string;
   name: string;
   address: string;
@@ -25,8 +26,7 @@ const requiredFields: Array<keyof CreateAttractionBody> = [
 ];
 
 export async function POST(request: Request) {
-  const token = request.headers.get("x-admin-token");
-  if (!isValidAdminToken(token)) {
+  if (!isAdminRequestAuthorized(request)) {
     return NextResponse.json({ message: "Нет доступа." }, { status: 401 });
   }
 
@@ -45,23 +45,26 @@ export async function POST(request: Request) {
     }
   }
 
-  const { data, error } = await supabase
-    .from("attractions")
-    .insert({
-      tour_id: body.tourId,
-      name: body.name,
-      address: body.address,
-      lat: body.lat,
-      lng: body.lng,
-      working_hours: body.workingHours ?? "",
-      entry_price: body.entryPrice ?? "",
-      visit_duration: body.visitDuration ?? "",
-      description: body.description ?? "",
-      tips: body.tips ?? "",
-      category: body.category ?? "Другое",
-    })
-    .select("id")
-    .single();
+  const payload = {
+    id: body.id,
+    tour_id: body.tourId,
+    name: body.name,
+    address: body.address,
+    lat: body.lat,
+    lng: body.lng,
+    working_hours: body.workingHours ?? "",
+    entry_price: body.entryPrice ?? "",
+    visit_duration: body.visitDuration ?? "",
+    description: body.description ?? "",
+    tips: body.tips ?? "",
+    category: body.category ?? "Другое",
+  };
+
+  const query = body.id
+    ? supabase.from("attractions").upsert(payload, { onConflict: "id" })
+    : supabase.from("attractions").insert(payload);
+
+  const { data, error } = await query.select("id").single();
 
   if (error || !data) {
     return NextResponse.json(
@@ -70,6 +73,8 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ id: data.id, message: "Достопримечательность сохранена." });
+  return NextResponse.json({
+    id: data.id,
+    message: body.id ? "Достопримечательность обновлена." : "Достопримечательность сохранена.",
+  });
 }
-
