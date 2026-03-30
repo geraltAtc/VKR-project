@@ -16,7 +16,7 @@ const withPWAConfig = withPWA({
     },
     {
       urlPattern:
-        /^https?:\/\/[^/]+\/(?:$|tours(?:\/.*)?|search(?:\/.*)?|profile(?:\/.*)?|offline(?:\/.*)?)$/i,
+        /^https?:\/\/[^/]+\/(?:$|tours(?:\/.*)?|search(?:\/.*)?|profile(?:\/.*)?|offline(?:\/.*)?)(?:\?.*)?$/i,
       handler: "NetworkFirst",
       options: {
         cacheName: "public-pages-v2",
