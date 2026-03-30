@@ -39,19 +39,23 @@ export function AdminLoginForm() {
   };
 
   return (
-    <main className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <main className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm">
       <h1 className="text-2xl font-semibold text-[#1A2B48]">Вход в админ-панель</h1>
       <p className="mt-2 text-sm text-slate-600">
         Введите токен администратора, чтобы открыть раздел управления турами.
       </p>
 
       <form onSubmit={onSubmit} className="mt-5 space-y-3">
+        <label htmlFor="admin-token" className="block text-xs font-medium text-slate-600">
+          Токен администратора
+        </label>
         <input
+          id="admin-token"
           type="password"
           value={token}
           onChange={(event) => setToken(event.target.value)}
           placeholder="ADMIN_DASHBOARD_TOKEN"
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none ring-[#00D4FF] focus:ring-2"
+          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none ring-[#00D4FF] focus:ring-2"
         />
         {error && <p className="text-sm text-rose-600">{error}</p>}
         <button

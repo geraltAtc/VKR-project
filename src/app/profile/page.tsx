@@ -58,15 +58,19 @@ export default function ProfilePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="travel-shell">
       <Header />
 
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <h1 className="text-2xl font-semibold text-[#1A2B48]">Мой кабинет туриста</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Здесь отображается локальный прогресс по чек-листам, который доступен даже
-          в офлайне.
-        </p>
+      <main className="page-enter relative z-10 mx-auto max-w-5xl px-4 py-8">
+        <section className="surface-card rounded-3xl p-6">
+          <h1 className="text-2xl font-semibold tracking-tight text-[#16345F] dark:text-slate-100">
+            Мой кабинет туриста
+          </h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            Локальный прогресс по чек-листам хранится на устройстве и доступен даже
+            офлайн.
+          </p>
+        </section>
 
         <div className="mt-6 grid gap-4">
           {error && <p className="text-sm text-rose-600">{error}</p>}
@@ -78,18 +82,18 @@ export default function ProfilePage() {
           {tours.map((tour) => (
             <article
               key={tour.id}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              className="surface-card rounded-2xl p-4"
             >
-              <p className="text-xs uppercase tracking-wide text-slate-500">
+              <p className="text-xs uppercase tracking-wide text-[#0E5B7E] dark:text-slate-300">
                 {tour.city}, {tour.country}
               </p>
-              <h2 className="text-base font-semibold text-[#1A2B48]">{tour.title}</h2>
-              <p className="mt-1 text-sm text-slate-600">
+              <h2 className="text-base font-semibold text-[#17385F] dark:text-slate-100">{tour.title}</h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                 Выполнено пунктов: {checklistState[tour.id] ?? 0}
               </p>
               <Link
                 href={`/tours/${tour.id}`}
-                className="mt-3 inline-flex rounded-xl border border-slate-300 px-3 py-1.5 text-xs text-slate-700"
+                className="mt-3 inline-flex rounded-xl bg-[#17385F] px-3 py-1.5 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#102946]"
               >
                 Открыть тур
               </Link>

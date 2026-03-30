@@ -118,6 +118,12 @@ export default function AdminPage() {
     () => tours.some((tour) => tour.id === selectedTourId),
     [tours, selectedTourId],
   );
+  const fieldClass =
+    "rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none ring-[#00D4FF] focus:ring-2";
+  const textareaClass =
+    "min-h-20 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none ring-[#00D4FF] focus:ring-2";
+  const formCardClass =
+    "rounded-3xl border border-slate-200 bg-white p-5 text-slate-900 shadow-sm";
 
   const handleError = (reason: unknown) => {
     setNotice({
@@ -366,7 +372,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <div>
@@ -405,7 +411,7 @@ export default function AdminPage() {
             <select
               value={selectedTourId}
               onChange={(event) => setSelectedTourId(event.target.value)}
-              className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              className={fieldClass}
               disabled={isLoadingTours}
             >
               <option value="">
@@ -463,7 +469,7 @@ export default function AdminPage() {
         <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
           <form
             onSubmit={handleSubmitTour}
-            className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+            className={formCardClass}
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-[#1A2B48]">1. Тур</h2>
@@ -507,7 +513,7 @@ export default function AdminPage() {
                     }))
                   }
                   placeholder={placeholder}
-                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                  className={fieldClass}
                 />
               ))}
 
@@ -517,7 +523,7 @@ export default function AdminPage() {
                   setTourForm((prev) => ({ ...prev, roomDetails: event.target.value }))
                 }
                 placeholder="Что входит в номер"
-                className="min-h-20 rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+                className={`${textareaClass} md:col-span-2`}
               />
               <textarea
                 value={tourForm.transferDetails}
@@ -528,7 +534,7 @@ export default function AdminPage() {
                   }))
                 }
                 placeholder="Описание трансфера"
-                className="min-h-20 rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+                className={`${textareaClass} md:col-span-2`}
               />
             </div>
             <button
@@ -541,7 +547,7 @@ export default function AdminPage() {
 
           <form
             onSubmit={handleSubmitAttraction}
-            className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+            className={formCardClass}
           >
             <h2 className="text-lg font-semibold text-[#1A2B48]">
               2. Достопримечательность
@@ -553,7 +559,7 @@ export default function AdminPage() {
                   setAttractionForm((prev) => ({ ...prev, id: event.target.value }))
                 }
                 placeholder="ID (оставьте пустым для новой)"
-                className="rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+                className={`${fieldClass} md:col-span-2`}
               />
               {[
                 ["tourId", "ID тура"],
@@ -576,7 +582,7 @@ export default function AdminPage() {
                     }))
                   }
                   placeholder={placeholder}
-                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                  className={fieldClass}
                 />
               ))}
 
@@ -589,7 +595,7 @@ export default function AdminPage() {
                   }))
                 }
                 placeholder="Описание места"
-                className="min-h-20 rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+                className={`${textareaClass} md:col-span-2`}
               />
               <textarea
                 value={attractionForm.tips}
@@ -597,7 +603,7 @@ export default function AdminPage() {
                   setAttractionForm((prev) => ({ ...prev, tips: event.target.value }))
                 }
                 placeholder="Совет туристу"
-                className="min-h-20 rounded-xl border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+                className={`${textareaClass} md:col-span-2`}
               />
             </div>
 
@@ -674,7 +680,7 @@ export default function AdminPage() {
 
           <form
             onSubmit={handleSubmitCountryInfo}
-            className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+            className={formCardClass}
           >
             <h2 className="text-lg font-semibold text-[#1A2B48]">
               3. Информация о стране
@@ -686,7 +692,7 @@ export default function AdminPage() {
                   setCountryForm((prev) => ({ ...prev, tourId: event.target.value }))
                 }
                 placeholder="ID тура"
-                className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className={fieldClass}
               />
               {[
                 ["currencyInfo", "Валюта и деньги"],
@@ -708,7 +714,7 @@ export default function AdminPage() {
                     }))
                   }
                   placeholder={placeholder}
-                  className="min-h-20 rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                  className={textareaClass}
                 />
               ))}
             </div>
@@ -722,7 +728,7 @@ export default function AdminPage() {
 
           <form
             onSubmit={handleSubmitChecklist}
-            className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+            className={formCardClass}
           >
             <h2 className="text-lg font-semibold text-[#1A2B48]">4. Пункт чек-листа</h2>
             <div className="mt-4 grid grid-cols-1 gap-3">
@@ -732,7 +738,7 @@ export default function AdminPage() {
                   setChecklistForm((prev) => ({ ...prev, id: event.target.value }))
                 }
                 placeholder="ID (оставьте пустым для нового)"
-                className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className={fieldClass}
               />
               <input
                 value={checklistForm.tourId}
@@ -740,7 +746,7 @@ export default function AdminPage() {
                   setChecklistForm((prev) => ({ ...prev, tourId: event.target.value }))
                 }
                 placeholder="ID тура"
-                className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className={fieldClass}
               />
               <input
                 value={checklistForm.category}
@@ -748,7 +754,7 @@ export default function AdminPage() {
                   setChecklistForm((prev) => ({ ...prev, category: event.target.value }))
                 }
                 placeholder="Категория (Документы, Одежда...)"
-                className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className={fieldClass}
               />
               <input
                 value={checklistForm.title}
@@ -756,7 +762,7 @@ export default function AdminPage() {
                   setChecklistForm((prev) => ({ ...prev, title: event.target.value }))
                 }
                 placeholder="Название пункта"
-                className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className={fieldClass}
               />
               <textarea
                 value={checklistForm.note}
@@ -764,7 +770,7 @@ export default function AdminPage() {
                   setChecklistForm((prev) => ({ ...prev, note: event.target.value }))
                 }
                 placeholder="Комментарий (опционально)"
-                className="min-h-20 rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                className={textareaClass}
               />
               <label className="inline-flex items-center gap-2 text-sm text-slate-700">
                 <input
@@ -851,4 +857,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

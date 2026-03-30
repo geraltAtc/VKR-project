@@ -1,19 +1,31 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta",
+const manrope = Manrope({
+  variable: "--font-ui",
   subsets: ["latin"],
-  weight: ["300", "400", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const inter = Inter({
-  variable: "--font-inter",
+const cormorant = Cormorant_Garamond({
+  variable: "--font-display",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "700"],
+  weight: ["500", "600", "700"],
 });
+
+const themeBootScript = `
+(() => {
+  try {
+    const key = 'lite.travel:theme';
+    const stored = localStorage.getItem(key);
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = stored ? stored === 'dark' : prefersDark;
+    document.documentElement.classList.toggle('dark', isDark);
+  } catch {}
+})();
+`;
 
 export const metadata: Metadata = {
   title: "lite.travel — электронный гид туриста",
@@ -44,7 +56,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className={`${plusJakarta.variable} ${inter.variable} antialiased`}>
+      <body className={`${manrope.variable} ${cormorant.variable} antialiased`}>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <ServiceWorkerRegistration />
         {children}
       </body>

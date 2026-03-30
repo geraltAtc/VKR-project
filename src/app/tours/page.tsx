@@ -74,31 +74,33 @@ export default function ToursPage() {
   }, [query, tours]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="travel-shell">
       <Header />
 
-      <main className="mx-auto max-w-7xl px-4 py-8">
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <main className="page-enter relative z-10 mx-auto max-w-7xl px-4 py-8">
+        <section className="hero-card rounded-3xl p-6 text-white">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-2xl font-semibold text-[#1A2B48]">Мои туры</h1>
+            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+              Мои туры
+            </h1>
             <Link
               href="/admin/login"
-              className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs text-slate-700"
+              className="glass-chip rounded-full px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/25"
             >
               Вход для администратора
             </Link>
           </div>
-          <p className="mt-2 text-sm text-slate-600">
-            Откройте нужный тур, чтобы увидеть отель, карту, достопримечательности,
-            страну и персональный чек-лист.
+          <p className="mt-2 max-w-2xl text-sm text-white/85">
+            Единый гид по поездке: проживание, карта, ориентиры, полезные контакты и
+            чек-лист в одном месте.
           </p>
 
-          <div className="mt-4">
+          <div className="mt-5">
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Поиск по городу, стране, отелю..."
-              className="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm outline-none ring-[#00D4FF] focus:ring-2"
+              className="w-full rounded-2xl border border-white/35 bg-white/16 px-4 py-2.5 text-sm text-white placeholder:text-white/70 outline-none ring-[#00D4FF] transition focus:ring-2"
             />
           </div>
         </section>
