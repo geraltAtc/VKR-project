@@ -10,6 +10,13 @@ interface WeatherPanelProps {
   lng: number;
 }
 
+const humanizeLoadError = (reason: unknown) => {
+  if (reason instanceof Error && /failed to fetch/i.test(reason.message)) {
+    return "Нет сети и нет локального кэша прогноза.";
+  }
+  return reason instanceof Error ? reason.message : "Ошибка загрузки погоды.";
+};
+
 export const WeatherPanel: React.FC<WeatherPanelProps> = ({ tourId, lat, lng }) => {
   const [data, setData] = useState<WeatherForecast | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,7 +35,7 @@ export const WeatherPanel: React.FC<WeatherPanelProps> = ({ tourId, lat, lng }) 
       })
       .catch((reason) => {
         if (!active) return;
-        setError(reason instanceof Error ? reason.message : "Ошибка загрузки погоды.");
+        setError(humanizeLoadError(reason));
       })
       .finally(() => {
         if (active) setIsLoading(false);
@@ -71,4 +78,3 @@ export const WeatherPanel: React.FC<WeatherPanelProps> = ({ tourId, lat, lng }) 
     </section>
   );
 };
-

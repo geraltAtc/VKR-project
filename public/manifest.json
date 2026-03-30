@@ -2,7 +2,7 @@
   "name": "lite.travel",
   "short_name": "lite.travel",
   "description": "Электронный гид туриста: отель, карта, чек-лист и офлайн-доступ.",
-  "start_url": "/",
+  "start_url": "/tours",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",

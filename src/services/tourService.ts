@@ -65,9 +65,34 @@ interface AdminChecklistPayload {
 
 class TourService {
   private readonly baseUrl: string;
+  private readonly cacheKeys = {
+    tours: "lite.travel:cache:tours:v1",
+    tourPrefix: "lite.travel:cache:tour:v1:",
+    weatherPrefix: "lite.travel:cache:weather:v1:",
+  };
 
   constructor() {
     this.baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
+  }
+
+  private readCache<T>(key: string): T | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  private writeCache<T>(key: string, value: T): void {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // Ignore write failures (quota, private mode, etc).
+    }
   }
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -88,11 +113,28 @@ class TourService {
   }
 
   async getAllTours(): Promise<TourSummary[]> {
-    return this.request<TourSummary[]>("/tours");
+    try {
+      const tours = await this.request<TourSummary[]>("/tours");
+      this.writeCache(this.cacheKeys.tours, tours);
+      return tours;
+    } catch (error) {
+      const cached = this.readCache<TourSummary[]>(this.cacheKeys.tours);
+      if (cached) return cached;
+      throw error;
+    }
   }
 
   async getTourById(id: string): Promise<TourDetails> {
-    return this.request<TourDetails>(`/tours/${id}`);
+    const cacheKey = `${this.cacheKeys.tourPrefix}${id}`;
+    try {
+      const tour = await this.request<TourDetails>(`/tours/${id}`);
+      this.writeCache(cacheKey, tour);
+      return tour;
+    } catch (error) {
+      const cached = this.readCache<TourDetails>(cacheKey);
+      if (cached) return cached;
+      throw error;
+    }
   }
 
   async getWeather(lat: number, lng: number, tourId?: string) {
@@ -104,8 +146,19 @@ class TourService {
     if (tourId) {
       params.set("tourId", tourId);
     }
-
-    return this.request<WeatherForecast>(`/weather?${params.toString()}`);
+    const keyPart = tourId || `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    const cacheKey = `${this.cacheKeys.weatherPrefix}${keyPart}`;
+    try {
+      const weather = await this.request<WeatherForecast>(
+        `/weather?${params.toString()}`,
+      );
+      this.writeCache(cacheKey, weather);
+      return weather;
+    } catch (error) {
+      const cached = this.readCache<WeatherForecast>(cacheKey);
+      if (cached) return cached;
+      throw error;
+    }
   }
 
   async adminLogin(token: string) {

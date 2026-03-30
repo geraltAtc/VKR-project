@@ -6,18 +6,31 @@ import { Header } from "@/components";
 import { tourService } from "@/services";
 import type { TourSummary } from "@/types/travel";
 
+const humanizeLoadError = (reason: unknown) => {
+  if (reason instanceof Error && /failed to fetch/i.test(reason.message)) {
+    return "Нет сети и кэш пуст. Откройте раздел онлайн хотя бы один раз, чтобы использовать поиск офлайн.";
+  }
+  return reason instanceof Error ? reason.message : "Не удалось загрузить туры.";
+};
+
 export default function SearchPage() {
   const [tours, setTours] = useState<TourSummary[]>([]);
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    setError(null);
     tourService
       .getAllTours()
       .then((data) => {
         if (!active) return;
         setTours(data);
+      })
+      .catch((reason) => {
+        if (!active) return;
+        setError(humanizeLoadError(reason));
       })
       .finally(() => {
         if (active) setIsLoading(false);
@@ -57,8 +70,9 @@ export default function SearchPage() {
 
         <div className="mt-6 space-y-3">
           {isLoading && <p className="text-sm text-slate-500">Загрузка...</p>}
+          {error && <p className="text-sm text-rose-600">{error}</p>}
 
-          {!isLoading && filtered.length === 0 && (
+          {!isLoading && !error && filtered.length === 0 && (
             <p className="text-sm text-slate-600">Ничего не найдено.</p>
           )}
 
@@ -85,4 +99,3 @@ export default function SearchPage() {
     </div>
   );
 }
-

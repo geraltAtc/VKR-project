@@ -1,9 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Header, TourCard } from "@/components";
 import { tourService } from "@/services";
 import type { TourSummary } from "@/types/travel";
+
+const humanizeLoadError = (reason: unknown, fallback: string) => {
+  if (reason instanceof Error && /failed to fetch/i.test(reason.message)) {
+    return "Нет сети и кэш пуст. Откройте тур онлайн хотя бы один раз, чтобы он был доступен офлайн.";
+  }
+  return reason instanceof Error ? reason.message : fallback;
+};
 
 export default function ToursPage() {
   const [tours, setTours] = useState<TourSummary[]>([]);
@@ -21,11 +29,7 @@ export default function ToursPage() {
       })
       .catch((reason) => {
         if (!active) return;
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "Не удалось загрузить список туров.",
-        );
+        setError(humanizeLoadError(reason, "Не удалось загрузить список туров."));
       })
       .finally(() => {
         if (active) setIsLoading(false);
@@ -53,7 +57,15 @@ export default function ToursPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8">
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h1 className="text-2xl font-semibold text-[#1A2B48]">Мои туры</h1>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-2xl font-semibold text-[#1A2B48]">Мои туры</h1>
+            <Link
+              href="/admin/login"
+              className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs text-slate-700"
+            >
+              Вход для администратора
+            </Link>
+          </div>
           <p className="mt-2 text-sm text-slate-600">
             Откройте нужный тур, чтобы увидеть отель, карту, достопримечательности,
             страну и персональный чек-лист.
@@ -87,4 +99,3 @@ export default function ToursPage() {
     </div>
   );
 }
-

@@ -7,17 +7,31 @@ import { tourService } from "@/services";
 import type { TourSummary } from "@/types/travel";
 
 const checklistStoragePrefix = "lite-travel-checklist:";
+const humanizeLoadError = (reason: unknown) => {
+  if (reason instanceof Error && /failed to fetch/i.test(reason.message)) {
+    return "Нет сети и кэш пуст. Откройте туры онлайн хотя бы один раз, чтобы видеть их в офлайне.";
+  }
+  return reason instanceof Error ? reason.message : "Не удалось загрузить список туров.";
+};
 
 export default function ProfilePage() {
   const [tours, setTours] = useState<TourSummary[]>([]);
   const [checklistState, setChecklistState] = useState<Record<string, number>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    tourService.getAllTours().then((data) => {
-      if (!active) return;
-      setTours(data);
-    });
+    setError(null);
+    tourService
+      .getAllTours()
+      .then((data) => {
+        if (!active) return;
+        setTours(data);
+      })
+      .catch((reason) => {
+        if (!active) return;
+        setError(humanizeLoadError(reason));
+      });
     return () => {
       active = false;
     };
@@ -55,6 +69,12 @@ export default function ProfilePage() {
         </p>
 
         <div className="mt-6 grid gap-4">
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+
+          {!error && tours.length === 0 && (
+            <p className="text-sm text-slate-600">Нет доступных туров.</p>
+          )}
+
           {tours.map((tour) => (
             <article
               key={tour.id}
@@ -80,4 +100,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

@@ -18,6 +18,13 @@ const countryBlocks = (countryInfo: CountryInfo | null) => [
   { title: "Полезные контакты", value: countryInfo?.usefulContacts },
 ];
 
+const humanizeLoadError = (reason: unknown) => {
+  if (reason instanceof Error && /failed to fetch/i.test(reason.message)) {
+    return "Нет сети и кэш этого тура пуст. Откройте тур онлайн хотя бы один раз, чтобы использовать его офлайн.";
+  }
+  return reason instanceof Error ? reason.message : "Не удалось загрузить тур.";
+};
+
 export default function TourDetailsPage() {
   const params = useParams<{ id: string }>();
   const tourId = params?.id;
@@ -45,9 +52,7 @@ export default function TourDetailsPage() {
       })
       .catch((reason) => {
         if (!active) return;
-        setError(
-          reason instanceof Error ? reason.message : "Не удалось загрузить тур.",
-        );
+        setError(humanizeLoadError(reason));
       })
       .finally(() => {
         if (active) setIsLoading(false);
