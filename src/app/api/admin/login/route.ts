@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server'; 
-import { ADMIN_SESSION_COOKIE, isValidAdminToken } from '@/lib/adminAuth'; 
+import { ADMIN_SESSION_COOKIE, getConfiguredAdminToken, isValidAdminToken } from '@/lib/adminAuth'; 
  
 interface LoginBody { 
   token: string; 
 } 
  
 export async function POST(request: Request) { 
+  const configuredToken = getConfiguredAdminToken(); 
+  if (!configuredToken) { 
+    return NextResponse.json( 
+      { message: 'ADMIN_DASHBOARD_TOKEN is not configured on server environment.' }, 
+      { status: 500 }, 
+    ); 
+  } 
+ 
   const body = (await request.json()) as Partial<LoginBody>; 
-  if (!isValidAdminToken(body.token)) { 
+  const providedToken = (body.token ?? '').trim(); 
+ 
+  if (!isValidAdminToken(providedToken)) { 
     return NextResponse.json( 
       { message: 'Invalid admin token.' }, 
       { status: 401 }, 
@@ -17,7 +27,7 @@ export async function POST(request: Request) {
   const response = NextResponse.json({ message: 'Logged in.' }); 
   response.cookies.set({ 
     name: ADMIN_SESSION_COOKIE, 
-    value: body.token as string, 
+    value: providedToken, 
     httpOnly: true, 
     sameSite: 'strict', 
     secure: process.env.NODE_ENV === 'production', 

@@ -15,12 +15,13 @@ export function AdminLoginForm() {
     event.preventDefault();
     setError(null);
     setIsLoading(true);
+    const trimmedToken = token.trim();
 
     try {
       const response = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token: trimmedToken }),
       });
 
       const payload = (await response.json()) as { message?: string };
@@ -64,4 +65,3 @@ export function AdminLoginForm() {
     </main>
   );
 }
-

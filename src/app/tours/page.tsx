@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Header, TourCard } from "@/components";
 import { tourService } from "@/services";
 import type { TourSummary } from "@/types/travel";
@@ -14,10 +15,12 @@ const humanizeLoadError = (reason: unknown, fallback: string) => {
 };
 
 export default function ToursPage() {
+  const router = useRouter();
   const [tours, setTours] = useState<TourSummary[]>([]);
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const prefetchedTourIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let active = true;
@@ -39,6 +42,25 @@ export default function ToursPage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    const pendingTours = tours.filter(
+      (tour) => !prefetchedTourIdsRef.current.has(tour.id),
+    );
+    if (pendingTours.length === 0) return;
+
+    pendingTours.forEach((tour) => {
+      prefetchedTourIdsRef.current.add(tour.id);
+      router.prefetch(`/tours/${tour.id}`);
+    });
+
+    void Promise.allSettled(
+      pendingTours.map(async (tour) => {
+        const details = await tourService.getTourById(tour.id);
+        await tourService.getWeather(details.hotelLat, details.hotelLng, details.id);
+      }),
+    );
+  }, [router, tours]);
 
   const filteredTours = useMemo(() => {
     if (!query) return tours;
