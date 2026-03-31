@@ -77,7 +77,6 @@ export const Header: React.FC = () => {
         <nav className="flex flex-wrap items-center gap-2 text-sm">
           {[
             { href: "/tours", label: "Мои туры" },
-            { href: "/search", label: "Поиск мест" },
             { href: "/profile", label: "Чек-листы" },
           ].map((link) => {
             const active =

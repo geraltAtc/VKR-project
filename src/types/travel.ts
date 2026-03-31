@@ -74,3 +74,14 @@ export interface WeatherForecast {
   days: WeatherDay[];
 }
 
+
+export interface TourAccessLink {
+  id: string;
+  tourId: string;
+  label: string;
+  isActive: boolean;
+  createdAt: string;
+  expiresAt: string | null;
+  lastUsedAt: string | null;
+  url: string;
+}

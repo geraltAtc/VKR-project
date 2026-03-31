@@ -4,11 +4,9 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { tourService } from "@/services";
-import type { TourDetails, TourSummary } from "@/types/travel";
+import type { TourAccessLink, TourDetails, TourSummary } from "@/types/travel";
 
 type Notice = { type: "success" | "error"; text: string } | null;
-
-const LAST_SHARED_TOUR_KEY = "lite.travel:last-shared-tour-id";
 
 const numberValue = (value: string) => {
   const parsed = Number(value);
@@ -71,11 +69,11 @@ const emptyChecklistForm = (tourId = "") => ({
   required: false,
 });
 
-const buildPublicTourLink = (tourId: string) => {
-  const base =
-    typeof window !== "undefined" ? window.location.origin : "https://lite.travel";
-  return `${base}/tours/${encodeURIComponent(tourId)}`;
-};
+const emptyAccessLinkForm = (tourId = "") => ({
+  tourId,
+  label: "",
+  expiresAt: "",
+});
 
 const mapTourToForm = (tour: TourDetails) => ({
   id: tour.id,
@@ -105,14 +103,17 @@ export default function AdminPage() {
   const [selectedTour, setSelectedTour] = useState<TourDetails | null>(null);
   const [isLoadingTours, setIsLoadingTours] = useState(true);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [isLoadingAccessLinks, setIsLoadingAccessLinks] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
-  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [accessLinks, setAccessLinks] = useState<TourAccessLink[]>([]);
+  const [generatedAccessLink, setGeneratedAccessLink] = useState<string | null>(null);
 
   const [tourForm, setTourForm] = useState(emptyTourForm);
   const [attractionForm, setAttractionForm] = useState(emptyAttractionForm());
   const [countryForm, setCountryForm] = useState(emptyCountryForm());
   const [checklistForm, setChecklistForm] = useState(emptyChecklistForm());
+  const [accessLinkForm, setAccessLinkForm] = useState(emptyAccessLinkForm());
 
   const selectedTourExists = useMemo(
     () => tours.some((tour) => tour.id === selectedTourId),
@@ -138,9 +139,26 @@ export default function AdminPage() {
     return list;
   };
 
+  const loadAccessLinks = async (tourId: string) => {
+    if (!tourId) {
+      setAccessLinks([]);
+      return;
+    }
+
+    setIsLoadingAccessLinks(true);
+    try {
+      const links = await tourService.getAccessLinks(tourId);
+      setAccessLinks(links);
+      setAccessLinkForm((prev) => ({ ...prev, tourId }));
+    } finally {
+      setIsLoadingAccessLinks(false);
+    }
+  };
+
   const loadSelectedTourDetails = async (tourId: string) => {
     setIsLoadingDetails(true);
     try {
+      setGeneratedAccessLink(null);
       const details = await tourService.getTourById(tourId);
       setSelectedTour(details);
       setTourForm(mapTourToForm(details));
@@ -157,8 +175,8 @@ export default function AdminPage() {
       });
       setAttractionForm(emptyAttractionForm(details.id));
       setChecklistForm(emptyChecklistForm(details.id));
-      setShareLink(buildPublicTourLink(details.id));
-      localStorage.setItem(LAST_SHARED_TOUR_KEY, details.id);
+      setAccessLinkForm(emptyAccessLinkForm(details.id));
+      await loadAccessLinks(details.id);
     } finally {
       setIsLoadingDetails(false);
     }
@@ -171,20 +189,18 @@ export default function AdminPage() {
     loadTours()
       .then((list) => {
         if (!active) return;
-        const remembered = localStorage.getItem(LAST_SHARED_TOUR_KEY);
-        const preferred =
-          remembered && list.some((tour) => tour.id === remembered)
-            ? remembered
-            : list[0]?.id ?? "";
+        const preferred = list[0]?.id ?? "";
 
         if (preferred) {
           setSelectedTourId(preferred);
         } else {
-          setShareLink(null);
+          setAccessLinks([]);
+          setGeneratedAccessLink(null);
           setTourForm(emptyTourForm);
           setAttractionForm(emptyAttractionForm());
           setCountryForm(emptyCountryForm());
           setChecklistForm(emptyChecklistForm());
+          setAccessLinkForm(emptyAccessLinkForm());
         }
       })
       .catch(handleError)
@@ -200,6 +216,8 @@ export default function AdminPage() {
   useEffect(() => {
     if (!selectedTourId) {
       setSelectedTour(null);
+      setAccessLinks([]);
+      setGeneratedAccessLink(null);
       return;
     }
     loadSelectedTourDetails(selectedTourId).catch(handleError);
@@ -214,10 +232,13 @@ export default function AdminPage() {
   const handleCreateNewTourDraft = () => {
     setSelectedTourId("");
     setSelectedTour(null);
+    setAccessLinks([]);
+    setGeneratedAccessLink(null);
     setTourForm(emptyTourForm);
     setCountryForm(emptyCountryForm());
     setAttractionForm(emptyAttractionForm());
     setChecklistForm(emptyChecklistForm());
+    setAccessLinkForm(emptyAccessLinkForm());
     setNotice(null);
   };
 
@@ -232,15 +253,13 @@ export default function AdminPage() {
         hotelLng: numberValue(tourForm.hotelLng),
       });
 
-      const publicLink = buildPublicTourLink(response.id);
-      setShareLink(publicLink);
-      localStorage.setItem(LAST_SHARED_TOUR_KEY, response.id);
       await loadTours();
       setSelectedTourId(response.id);
+      setGeneratedAccessLink(null);
 
       setNotice({
         type: "success",
-        text: `${response.message} Ссылка для туриста обновлена.`,
+        text: `${response.message} Теперь можно создать персональные ссылки для туристов.`,
       });
     } catch (reason) {
       handleError(reason);
@@ -264,8 +283,6 @@ export default function AdminPage() {
       const nextId = list[0]?.id ?? "";
       setSelectedTourId(nextId);
       if (!nextId) {
-        localStorage.removeItem(LAST_SHARED_TOUR_KEY);
-        setShareLink(null);
         handleCreateNewTourDraft();
       }
       setNotice({ type: "success", text: response.message });
@@ -371,6 +388,50 @@ export default function AdminPage() {
     }
   };
 
+  const handleCreateAccessLink = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!accessLinkForm.tourId) {
+      setNotice({ type: "error", text: "Сначала выберите тур." });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setNotice(null);
+    try {
+      const payload = {
+        tourId: accessLinkForm.tourId,
+        label: accessLinkForm.label,
+        expiresAt: accessLinkForm.expiresAt ? accessLinkForm.expiresAt : null,
+      };
+      const response = await tourService.createAccessLink(payload);
+      setGeneratedAccessLink(response.link.url);
+      await loadAccessLinks(accessLinkForm.tourId);
+      setAccessLinkForm((prev) => ({ ...prev, label: "", expiresAt: "" }));
+      setNotice({ type: "success", text: response.message });
+    } catch (reason) {
+      handleError(reason);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRevokeAccessLink = async (id: string) => {
+    const approved = confirm("Отключить эту персональную ссылку?");
+    if (!approved || !selectedTourId) return;
+
+    setIsSubmitting(true);
+    setNotice(null);
+    try {
+      const response = await tourService.revokeAccessLink(id);
+      await loadAccessLinks(selectedTourId);
+      setNotice({ type: "success", text: response.message });
+    } catch (reason) {
+      handleError(reason);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900">
       <header className="border-b border-slate-200 bg-white">
@@ -440,18 +501,102 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {shareLink && (
-            <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
-              <p className="text-sm font-semibold text-cyan-900">Ссылка для туриста:</p>
-              <p className="mt-1 break-all text-sm text-cyan-800">{shareLink}</p>
-              <button
-                onClick={() => navigator.clipboard.writeText(shareLink)}
-                className="mt-3 rounded-xl border border-cyan-300 px-3 py-1.5 text-xs text-cyan-900"
-              >
-                Скопировать ссылку
-              </button>
+          <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-cyan-900">
+                Персональные ссылки для туристов
+              </p>
+              {generatedAccessLink && (
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(generatedAccessLink)}
+                  className="rounded-xl border border-cyan-300 px-3 py-1.5 text-xs text-cyan-900"
+                >
+                  Скопировать последнюю ссылку
+                </button>
+              )}
             </div>
-          )}
+
+            <form
+              onSubmit={handleCreateAccessLink}
+              className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_1fr_auto]"
+            >
+              <input
+                value={accessLinkForm.label}
+                onChange={(event) =>
+                  setAccessLinkForm((prev) => ({ ...prev, label: event.target.value }))
+                }
+                placeholder="Комментарий к ссылке (например: Иван Петров)"
+                className={fieldClass}
+              />
+              <input
+                type="datetime-local"
+                value={accessLinkForm.expiresAt}
+                onChange={(event) =>
+                  setAccessLinkForm((prev) => ({
+                    ...prev,
+                    expiresAt: event.target.value,
+                  }))
+                }
+                className={fieldClass}
+              />
+              <button
+                type="submit"
+                disabled={!selectedTourId || isSubmitting}
+                className="rounded-xl bg-[#1A2B48] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                Создать ссылку
+              </button>
+            </form>
+
+            {generatedAccessLink && (
+              <p className="mt-3 break-all text-sm text-cyan-800">{generatedAccessLink}</p>
+            )}
+
+            <div className="mt-3 space-y-2">
+              {isLoadingAccessLinks && (
+                <p className="text-xs text-cyan-800">Загрузка персональных ссылок...</p>
+              )}
+              {!isLoadingAccessLinks && accessLinks.length === 0 && (
+                <p className="text-xs text-cyan-800">
+                  Пока нет персональных ссылок для этого тура.
+                </p>
+              )}
+              {accessLinks.map((link) => (
+                <div
+                  key={link.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-200 bg-white px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-xs text-cyan-900">{link.url}</p>
+                    <p className="text-xs text-cyan-800">
+                      {link.label ? `${link.label} • ` : ""}
+                      {link.isActive ? "активна" : "неактивна"}
+                      {link.expiresAt ? ` • до ${new Date(link.expiresAt).toLocaleString()}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(link.url)}
+                      className="rounded-lg border border-cyan-300 px-2 py-1 text-xs text-cyan-900"
+                    >
+                      Копировать
+                    </button>
+                    {link.isActive && (
+                      <button
+                        type="button"
+                        onClick={() => handleRevokeAccessLink(link.id)}
+                        className="rounded-lg border border-rose-300 px-2 py-1 text-xs text-rose-700"
+                      >
+                        Отключить
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         {notice && (

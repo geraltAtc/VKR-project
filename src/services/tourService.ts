@@ -2,6 +2,7 @@ import type {
   Attraction,
   ChecklistItem,
   CountryInfo,
+  TourAccessLink,
   TourDetails,
   TourSummary,
   WeatherForecast,
@@ -63,12 +64,18 @@ interface AdminChecklistPayload {
   required: boolean;
 }
 
+interface CreateAccessLinkPayload {
+  tourId: string;
+  label?: string;
+  expiresAt?: string | null;
+}
+
 class TourService {
   private readonly baseUrl: string;
   private readonly cacheKeys = {
-    tours: "lite.travel:cache:tours:v1",
-    tourPrefix: "lite.travel:cache:tour:v1:",
-    weatherPrefix: "lite.travel:cache:weather:v1:",
+    tours: "lite.travel:cache:tours:v2",
+    tourPrefix: "lite.travel:cache:tour:v2:",
+    weatherPrefix: "lite.travel:cache:weather:v2:",
   };
 
   constructor() {
@@ -95,6 +102,18 @@ class TourService {
     }
   }
 
+  private isAccessDeniedError(reason: unknown): boolean {
+    if (!(reason instanceof Error)) return false;
+    const normalized = reason.message.toLowerCase();
+    return (
+      normalized.includes("нет доступа") ||
+      normalized.includes("доступ к туру не предоставлен") ||
+      normalized.includes("доступ к турам не предоставлен") ||
+      normalized.includes("401") ||
+      normalized.includes("403")
+    );
+  }
+
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       headers: {
@@ -105,7 +124,16 @@ class TourService {
     });
 
     if (!response.ok) {
-      const message = await response.text();
+      const raw = await response.text();
+      let message = raw;
+      try {
+        const parsed = JSON.parse(raw) as { message?: string };
+        if (parsed?.message) {
+          message = parsed.message;
+        }
+      } catch {
+        // Keep raw text.
+      }
       throw new Error(message || `HTTP ${response.status}`);
     }
 
@@ -118,6 +146,9 @@ class TourService {
       this.writeCache(this.cacheKeys.tours, tours);
       return tours;
     } catch (error) {
+      if (this.isAccessDeniedError(error)) {
+        throw error;
+      }
       const cached = this.readCache<TourSummary[]>(this.cacheKeys.tours);
       if (cached) return cached;
       throw error;
@@ -131,6 +162,9 @@ class TourService {
       this.writeCache(cacheKey, tour);
       return tour;
     } catch (error) {
+      if (this.isAccessDeniedError(error)) {
+        throw error;
+      }
       const cached = this.readCache<TourDetails>(cacheKey);
       if (cached) return cached;
       throw error;
@@ -225,6 +259,29 @@ class TourService {
 
   async deleteChecklistItem(id: string) {
     return this.request<{ message: string }>(`/admin/checklist/${id}`, {
+      method: "DELETE",
+      credentials: "same-origin",
+    });
+  }
+
+  async getAccessLinks(tourId: string) {
+    const params = new URLSearchParams({ tourId });
+    return this.request<TourAccessLink[]>(`/admin/access-links?${params.toString()}`, {
+      method: "GET",
+      credentials: "same-origin",
+    });
+  }
+
+  async createAccessLink(payload: CreateAccessLinkPayload) {
+    return this.request<{ message: string; link: TourAccessLink }>("/admin/access-links", {
+      method: "POST",
+      credentials: "same-origin",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async revokeAccessLink(id: string) {
+    return this.request<{ message: string }>(`/admin/access-links/${id}`, {
       method: "DELETE",
       credentials: "same-origin",
     });

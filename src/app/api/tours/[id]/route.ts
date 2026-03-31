@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { mockTravelData } from "@/lib/mockTravelData";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { resolveTourIdFromAccessRequest } from "@/lib/tourAccess";
 import {
   mapAttraction,
   mapChecklistItem,
@@ -144,14 +145,36 @@ const getTourFromSupabase = async (tourId: string) => {
 };
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
+  const hasSupabase = Boolean(createSupabaseServerClient());
+
+  if (hasSupabase) {
+    const allowedTourId = await resolveTourIdFromAccessRequest(request);
+    if (!allowedTourId) {
+      return NextResponse.json(
+        {
+          message:
+            "Доступ к туру не предоставлен. Откройте персональную ссылку от администратора.",
+        },
+        { status: 401 },
+      );
+    }
+
+    if (allowedTourId !== id) {
+      return NextResponse.json({ message: "Нет доступа к этому туру." }, { status: 403 });
+    }
+  }
 
   const fromSupabase = await getTourFromSupabase(id);
   if (fromSupabase) {
     return NextResponse.json(fromSupabase);
+  }
+
+  if (hasSupabase) {
+    return NextResponse.json({ message: "Тур не найден" }, { status: 404 });
   }
 
   const fromMock = mockTravelData.getTourById(id);
@@ -161,4 +184,3 @@ export async function GET(
 
   return NextResponse.json(fromMock);
 }
-

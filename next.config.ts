@@ -71,6 +71,15 @@ const withPWAConfig = withPWA({
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  async redirects() {
+    return [
+      {
+        source: "/search",
+        destination: "/tours",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default withPWAConfig(nextConfig);
