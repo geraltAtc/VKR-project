@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAdminRequestAuthorized } from "@/lib/adminAuth";
 import { mockTravelData } from "@/lib/mockTravelData";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { resolveTourIdFromAccessRequest } from "@/lib/tourAccess";
@@ -150,8 +151,9 @@ export async function GET(
 ) {
   const { id } = await context.params;
   const hasSupabase = Boolean(createSupabaseServerClient());
+  const isAdminRequest = isAdminRequestAuthorized(request);
 
-  if (hasSupabase) {
+  if (hasSupabase && !isAdminRequest) {
     const allowedTourId = await resolveTourIdFromAccessRequest(request);
     if (!allowedTourId) {
       return NextResponse.json(

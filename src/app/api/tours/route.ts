@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAdminRequestAuthorized } from "@/lib/adminAuth";
 import { mockTravelData } from "@/lib/mockTravelData";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { resolveTourIdFromAccessRequest } from "@/lib/tourAccess";
@@ -19,18 +20,23 @@ interface TourRow {
 }
 
 const getToursFromSupabase = async (
-  allowedTourId: string,
+  allowedTourId?: string,
 ): Promise<TourSummary[] | null> => {
   const supabase = createSupabaseServerClient();
   if (!supabase) return null;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("tours")
     .select(
       "id,title,city,country,start_date,end_date,hotel_name,hotel_address,hotel_lat,hotel_lng",
     )
-    .eq("id", allowedTourId)
     .order("start_date", { ascending: true });
+
+  if (allowedTourId) {
+    query = query.eq("id", allowedTourId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Failed to fetch tours from Supabase:", error.message);
@@ -46,15 +52,21 @@ export async function GET(request: Request) {
     return NextResponse.json(mockTravelData.getTourSummaries());
   }
 
-  const allowedTourId = await resolveTourIdFromAccessRequest(request);
-  if (!allowedTourId) {
-    return NextResponse.json(
-      {
-        message:
-          "Доступ к турам не предоставлен. Откройте персональную ссылку от администратора.",
-      },
-      { status: 401 },
-    );
+  let allowedTourId: string | undefined;
+  const isAdminRequest = isAdminRequestAuthorized(request);
+
+  if (!isAdminRequest) {
+    const resolvedTourId = await resolveTourIdFromAccessRequest(request);
+    if (!resolvedTourId) {
+      return NextResponse.json(
+        {
+          message:
+            "Доступ к турам не предоставлен. Откройте персональную ссылку от администратора.",
+        },
+        { status: 401 },
+      );
+    }
+    allowedTourId = resolvedTourId;
   }
 
   const tours = await getToursFromSupabase(allowedTourId);
