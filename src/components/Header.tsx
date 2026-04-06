@@ -106,7 +106,7 @@ export const Header: React.FC = () => {
 
           <span className="ml-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/65 px-2.5 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">
             <span
-              className={`h-2.5 w-2.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-amber-500"} ${isOnline ? "" : "float-soft"}`}
+              className={`h-2.5 w-2.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-amber-500"}`}
             />
             {isOnline ? "Online" : "Offline"}
           </span>
