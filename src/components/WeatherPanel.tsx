@@ -8,6 +8,7 @@ interface WeatherPanelProps {
   tourId: string;
   lat: number;
   lng: number;
+  embedded?: boolean;
 }
 
 const humanizeLoadError = (reason: unknown) => {
@@ -17,7 +18,12 @@ const humanizeLoadError = (reason: unknown) => {
   return reason instanceof Error ? reason.message : "Ошибка загрузки погоды.";
 };
 
-export const WeatherPanel: React.FC<WeatherPanelProps> = ({ tourId, lat, lng }) => {
+export const WeatherPanel: React.FC<WeatherPanelProps> = ({
+  tourId,
+  lat,
+  lng,
+  embedded = false,
+}) => {
   const [data, setData] = useState<WeatherForecast | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,10 +53,12 @@ export const WeatherPanel: React.FC<WeatherPanelProps> = ({ tourId, lat, lng }) 
   }, [lat, lng, tourId]);
 
   return (
-    <section className="surface-card rounded-3xl p-5">
-      <h3 className="mb-4 text-lg font-semibold text-[#1A2B48] dark:text-slate-100">
-        Прогноз погоды
-      </h3>
+    <section className={embedded ? "" : "surface-card rounded-3xl p-5"}>
+      {!embedded && (
+        <h3 className="mb-4 text-lg font-semibold text-[#1A2B48] dark:text-slate-100">
+          Прогноз погоды
+        </h3>
+      )}
 
       {isLoading && (
         <p className="text-sm text-slate-500 dark:text-slate-400">

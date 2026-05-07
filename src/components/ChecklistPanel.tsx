@@ -6,11 +6,16 @@ import type { ChecklistItem } from "@/types/travel";
 interface ChecklistPanelProps {
   tourId: string;
   items: ChecklistItem[];
+  embedded?: boolean;
 }
 
 const storageKey = (tourId: string) => `lite-travel-checklist:${tourId}`;
 
-export const ChecklistPanel: React.FC<ChecklistPanelProps> = ({ tourId, items }) => {
+export const ChecklistPanel: React.FC<ChecklistPanelProps> = ({
+  tourId,
+  items,
+  embedded = false,
+}) => {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -43,11 +48,13 @@ export const ChecklistPanel: React.FC<ChecklistPanelProps> = ({ tourId, items })
   const total = items.length;
 
   return (
-    <section className="surface-card rounded-3xl p-5">
+    <section className={embedded ? "" : "surface-card rounded-3xl p-5"}>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-[#1A2B48] dark:text-slate-100">
-          Чек-лист путешественника
-        </h3>
+        {!embedded && (
+          <h3 className="text-lg font-semibold text-[#1A2B48] dark:text-slate-100">
+            Чек-лист путешественника
+          </h3>
+        )}
         <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
           {done}/{total} готово
         </span>
