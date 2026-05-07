@@ -384,11 +384,16 @@ export const TourMap: React.FC<TourMapProps> = ({
         const nextBoundsKey = `${hotel.lat.toFixed(6)},${hotel.lng.toFixed(6)}|${selectedAttraction.lat.toFixed(6)},${selectedAttraction.lng.toFixed(6)}`;
         if (lastFittedBoundsKeyRef.current !== nextBoundsKey) {
           lastFittedBoundsKeyRef.current = nextBoundsKey;
+          const southWest: [number, number] = [
+            Math.min(hotel.lng, selectedAttraction.lng),
+            Math.min(hotel.lat, selectedAttraction.lat),
+          ];
+          const northEast: [number, number] = [
+            Math.max(hotel.lng, selectedAttraction.lng),
+            Math.max(hotel.lat, selectedAttraction.lat),
+          ];
           map.fitBounds(
-            [
-              [hotel.lng, hotel.lat],
-              [selectedAttraction.lng, selectedAttraction.lat],
-            ],
+            [southWest, northEast],
             { padding: 70, maxZoom: 15, duration: 0 },
           );
         }
