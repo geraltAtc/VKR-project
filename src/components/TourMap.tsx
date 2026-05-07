@@ -265,6 +265,22 @@ export const TourMap: React.FC<TourMapProps> = ({
   }, [height]);
 
   useEffect(() => {
+    const handleSectionOpened = () => {
+      mapRef.current?.resize();
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("lite-travel:section-opened", handleSectionOpened);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("lite-travel:section-opened", handleSectionOpened);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
@@ -394,4 +410,3 @@ export const TourMap: React.FC<TourMapProps> = ({
     </div>
   );
 };
-

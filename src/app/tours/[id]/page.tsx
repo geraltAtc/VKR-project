@@ -40,11 +40,23 @@ const AreaSection: React.FC<AreaSectionProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
+  const toggle = () => {
+    setIsOpen((value) => {
+      const next = !value;
+      if (next && typeof window !== "undefined") {
+        requestAnimationFrame(() => {
+          window.dispatchEvent(new Event("lite-travel:section-opened"));
+        });
+      }
+      return next;
+    });
+  };
+
   return (
     <section className="surface-card rounded-3xl border border-slate-200/80 dark:border-slate-800">
       <button
         type="button"
-        onClick={() => setIsOpen((value) => !value)}
+        onClick={toggle}
         className="flex w-full items-center justify-between gap-4 rounded-3xl px-5 py-4 text-left transition hover:bg-white/40 dark:hover:bg-slate-900/30"
       >
         <div>
@@ -64,7 +76,13 @@ const AreaSection: React.FC<AreaSectionProps> = ({
         </span>
       </button>
 
-      {isOpen && <div className="border-t border-slate-200/80 px-5 py-4 dark:border-slate-800">{children}</div>}
+      <div
+        className={`border-t border-slate-200/80 px-5 py-4 dark:border-slate-800 ${
+          isOpen ? "block" : "hidden"
+        }`}
+      >
+        {children}
+      </div>
     </section>
   );
 };
