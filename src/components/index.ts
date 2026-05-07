@@ -9,3 +9,4 @@ export { ComparisonModal } from "./ComparisonModal";
 export { BookingForm } from "./BookingForm";
 export { PwaBenefits } from "./PwaBenefits";
 export { ServiceWorkerRegistration } from "./ServiceWorkerRegistration";
+export { CoordinatePickerMap } from "./CoordinatePickerMap";

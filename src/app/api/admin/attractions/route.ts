@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isAdminRequestAuthorized } from '@/lib/adminAuth';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
+import { geocodeAddress } from '@/lib/geocoding';
 
 interface AttractionBody {
   id?: unknown;
@@ -82,28 +83,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Field address is required.' }, { status: 400 });
   }
   if (lat === null || lng === null) {
-    const url = new URL('https://nominatim.openstreetmap.org/search');
-    url.searchParams.set('format', 'jsonv2');
-    url.searchParams.set('limit', '1');
-    url.searchParams.set('q', address);
-
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'Accept-Language': 'ru,en',
-        },
-        cache: 'no-store',
-      });
-      if (response.ok) {
-        const payload = (await response.json()) as Array<{ lat?: string; lon?: string }>;
-        const first = payload[0];
-        if (first) {
-          lat = parseOptionalNumber(first.lat);
-          lng = parseOptionalNumber(first.lon);
-        }
-      }
-    } catch {
-      // Ignore external geocoding failure and return friendly validation below.
+    const geocoded = await geocodeAddress(address);
+    if (geocoded) {
+      lat = geocoded.lat;
+      lng = geocoded.lng;
     }
   }
 

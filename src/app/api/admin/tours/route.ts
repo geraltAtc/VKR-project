@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminRequestAuthorized } from "@/lib/adminAuth";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { geocodeAddress } from "@/lib/geocoding";
 
 interface CreateTourBody {
   id: string;
@@ -58,30 +59,6 @@ export async function POST(request: Request) {
       if (Number.isFinite(parsed)) return parsed;
     }
     return null;
-  };
-
-  const geocodeAddress = async (query: string): Promise<{ lat: number; lng: number } | null> => {
-    const url = new URL("https://nominatim.openstreetmap.org/search");
-    url.searchParams.set("format", "jsonv2");
-    url.searchParams.set("limit", "1");
-    url.searchParams.set("q", query);
-
-    const response = await fetch(url, {
-      headers: {
-        "Accept-Language": "ru,en",
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) return null;
-    const payload = (await response.json()) as Array<{ lat?: string; lon?: string }>;
-    const first = payload[0];
-    if (!first) return null;
-
-    const lat = parseOptionalNumber(first.lat);
-    const lng = parseOptionalNumber(first.lon);
-    if (lat === null || lng === null) return null;
-    return { lat, lng };
   };
 
   for (const field of requiredStringFields) {

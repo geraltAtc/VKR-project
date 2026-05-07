@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CoordinatePickerMap } from "@/components";
 import { tourService } from "@/services";
 import type { TourAccessLink, TourDetails, TourSummary } from "@/types/travel";
 
@@ -108,6 +109,8 @@ export default function AdminPage() {
   const [isLoadingAccessLinks, setIsLoadingAccessLinks] = useState(false);
   const [isGeocodingHotel, setIsGeocodingHotel] = useState(false);
   const [isGeocodingAttraction, setIsGeocodingAttraction] = useState(false);
+  const [isHotelPickerOpen, setIsHotelPickerOpen] = useState(false);
+  const [isAttractionPickerOpen, setIsAttractionPickerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [accessLinks, setAccessLinks] = useState<TourAccessLink[]>([]);
@@ -243,6 +246,8 @@ export default function AdminPage() {
     setAttractionForm(emptyAttractionForm());
     setChecklistForm(emptyChecklistForm());
     setAccessLinkForm(emptyAccessLinkForm());
+    setIsHotelPickerOpen(false);
+    setIsAttractionPickerOpen(false);
     setNotice(null);
   };
 
@@ -742,16 +747,42 @@ export default function AdminPage() {
                 className={`${textareaClass} md:col-span-2`}
               />
               <div className="md:col-span-2">
-                <button
-                  type="button"
-                  onClick={handleGeocodeHotel}
-                  disabled={isGeocodingHotel || isSubmitting}
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:opacity-40"
-                >
-                  {isGeocodingHotel
-                    ? "Определяем координаты отеля..."
-                    : "Определить координаты отеля по адресу"}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleGeocodeHotel}
+                    disabled={isGeocodingHotel || isSubmitting}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:opacity-40"
+                  >
+                    {isGeocodingHotel
+                      ? "Определяем координаты отеля..."
+                      : "Определить координаты отеля по адресу"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsHotelPickerOpen((value) => !value)}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-700"
+                  >
+                    {isHotelPickerOpen
+                      ? "Скрыть выбор на карте"
+                      : "Выбрать координаты отеля на карте"}
+                  </button>
+                </div>
+                {isHotelPickerOpen && (
+                  <div className="mt-3">
+                    <CoordinatePickerMap
+                      initialLat={parseNullableNumber(tourForm.hotelLat)}
+                      initialLng={parseNullableNumber(tourForm.hotelLng)}
+                      onPick={({ lat, lng }) =>
+                        setTourForm((prev) => ({
+                          ...prev,
+                          hotelLat: lat.toFixed(6),
+                          hotelLng: lng.toFixed(6),
+                        }))
+                      }
+                    />
+                  </div>
+                )}
               </div>
             </div>
             <button
@@ -803,16 +834,42 @@ export default function AdminPage() {
                 />
               ))}
               <div className="md:col-span-2">
-                <button
-                  type="button"
-                  onClick={handleGeocodeAttraction}
-                  disabled={isGeocodingAttraction || isSubmitting}
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:opacity-40"
-                >
-                  {isGeocodingAttraction
-                    ? "Определяем координаты достопримечательности..."
-                    : "Определить координаты достопримечательности по адресу"}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleGeocodeAttraction}
+                    disabled={isGeocodingAttraction || isSubmitting}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:opacity-40"
+                  >
+                    {isGeocodingAttraction
+                      ? "Определяем координаты достопримечательности..."
+                      : "Определить координаты достопримечательности по адресу"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsAttractionPickerOpen((value) => !value)}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-700"
+                  >
+                    {isAttractionPickerOpen
+                      ? "Скрыть выбор на карте"
+                      : "Выбрать координаты достопримечательности на карте"}
+                  </button>
+                </div>
+                {isAttractionPickerOpen && (
+                  <div className="mt-3">
+                    <CoordinatePickerMap
+                      initialLat={parseNullableNumber(attractionForm.lat)}
+                      initialLng={parseNullableNumber(attractionForm.lng)}
+                      onPick={({ lat, lng }) =>
+                        setAttractionForm((prev) => ({
+                          ...prev,
+                          lat: lat.toFixed(6),
+                          lng: lng.toFixed(6),
+                        }))
+                      }
+                    />
+                  </div>
+                )}
               </div>
 
               <textarea

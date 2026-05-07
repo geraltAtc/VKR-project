@@ -1,17 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminRequestAuthorized } from "@/lib/adminAuth";
-
-interface NominatimResult {
-  lat?: string;
-  lon?: string;
-  display_name?: string;
-}
-
-const parseCoordinate = (value: string | undefined): number | null => {
-  if (!value) return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-};
+import { geocodeAddress } from "@/lib/geocoding";
 
 export async function GET(request: Request) {
   if (!isAdminRequestAuthorized(request)) {
@@ -24,47 +13,21 @@ export async function GET(request: Request) {
   }
 
   try {
-    const url = new URL("https://nominatim.openstreetmap.org/search");
-    url.searchParams.set("format", "jsonv2");
-    url.searchParams.set("limit", "1");
-    url.searchParams.set("q", query);
-
-    const response = await fetch(url, {
-      headers: {
-        "Accept-Language": "ru,en",
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
+    const result = await geocodeAddress(query);
+    if (!result) {
       return NextResponse.json(
-        { message: `Сервис геокодирования недоступен: HTTP ${response.status}` },
-        { status: 502 },
-      );
-    }
-
-    const payload = (await response.json()) as NominatimResult[];
-    const first = payload[0];
-    if (!first) {
-      return NextResponse.json(
-        { message: "Адрес не найден. Уточните запрос." },
+        {
+          message:
+            "Не удалось определить координаты по адресу. Уточните адрес или выберите точку на карте.",
+        },
         { status: 404 },
       );
     }
 
-    const lat = parseCoordinate(first.lat);
-    const lng = parseCoordinate(first.lon);
-    if (lat === null || lng === null) {
-      return NextResponse.json(
-        { message: "Не удалось прочитать координаты из ответа сервиса." },
-        { status: 502 },
-      );
-    }
-
     return NextResponse.json({
-      lat,
-      lng,
-      displayName: first.display_name ?? query,
+      lat: result.lat,
+      lng: result.lng,
+      displayName: result.displayName,
     });
   } catch (error) {
     return NextResponse.json(
@@ -77,4 +40,3 @@ export async function GET(request: Request) {
     );
   }
 }
-
