@@ -278,13 +278,10 @@ export default function AdminPage() {
   };
 
   const handleGeocodeHotel = async () => {
-    const query = [tourForm.hotelAddress, tourForm.city, tourForm.country]
-      .map((part) => part.trim())
-      .filter((part) => part.length > 0)
-      .join(", ");
+    const query = tourForm.hotelAddress.trim();
 
     if (!query) {
-      setNotice({ type: "error", text: "Укажите адрес/город/страну отеля для поиска координат." });
+      setNotice({ type: "error", text: "Укажите адрес отеля для поиска координат." });
       return;
     }
 
@@ -355,10 +352,7 @@ export default function AdminPage() {
   };
 
   const handleGeocodeAttraction = async () => {
-    const query = [attractionForm.address, tourForm.city, tourForm.country]
-      .map((part) => part.trim())
-      .filter((part) => part.length > 0)
-      .join(", ");
+    const query = attractionForm.address.trim();
 
     if (!query) {
       setNotice({ type: "error", text: "Укажите адрес достопримечательности для поиска координат." });

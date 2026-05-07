@@ -20,6 +20,7 @@ interface PickerMapLibreMap {
   addControl: (control: unknown, position?: string) => void;
   remove: () => void;
   jumpTo: (options: Record<string, unknown>) => void;
+  resize: () => void;
   on: (event: string, handler: (event: PickerMapLibreMapClickEvent) => void) => void;
 }
 
@@ -72,15 +73,27 @@ const isValidCoordinatePair = (lat: number, lng: number) =>
 
 const loadMapLibre = (): Promise<PickerMapLibreGlobal> =>
   new Promise((resolve, reject) => {
+    let settled = false;
+    const safeResolve = (value: PickerMapLibreGlobal) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+    const safeReject = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    };
+
     if (typeof window === "undefined") {
-      reject(new Error("Window is not available"));
+      safeReject(new Error("Window is not available"));
       return;
     }
 
     const windowWithMapLibre = window as Window & { maplibregl?: PickerMapLibreGlobal };
 
     if (windowWithMapLibre.maplibregl) {
-      resolve(windowWithMapLibre.maplibregl);
+      safeResolve(windowWithMapLibre.maplibregl);
       return;
     }
 
@@ -92,24 +105,34 @@ const loadMapLibre = (): Promise<PickerMapLibreGlobal> =>
       document.head.appendChild(link);
     }
 
-    const onReady = () => {
+    const tryResolve = () => {
       const windowWithLib = window as Window & { maplibregl?: PickerMapLibreGlobal };
       if (windowWithLib.maplibregl) {
-        resolve(windowWithLib.maplibregl);
-      } else {
-        reject(new Error("MapLibre loaded but global object is missing"));
+        safeResolve(windowWithLib.maplibregl);
+        return true;
+      }
+      return false;
+    };
+    const onReady = () => {
+      if (!tryResolve()) {
+        safeReject(new Error("MapLibre loaded but global object is missing"));
       }
     };
 
-    const onError = () => reject(new Error("Failed to load maplibre-gl"));
+    const onError = () => safeReject(new Error("Failed to load maplibre-gl"));
 
     const existingScript = document.getElementById(
       MAPLIBRE_SCRIPT_ID,
     ) as HTMLScriptElement | null;
 
     if (existingScript) {
+      if (tryResolve()) return;
       existingScript.addEventListener("load", onReady, { once: true });
       existingScript.addEventListener("error", onError, { once: true });
+      // If the script has already finished loading, the load event may not fire again.
+      setTimeout(() => {
+        if (tryResolve()) return;
+      }, 50);
       return;
     }
 
@@ -180,6 +203,7 @@ export const CoordinatePickerMap: React.FC<CoordinatePickerMapProps> = ({
 
     map.addControl(new maplibre.NavigationControl(), "top-right");
     mapRef.current = map;
+    requestAnimationFrame(() => mapRef.current?.jumpTo({ center: initialCenter, zoom: 13 }));
 
     if (
       typeof initialLat === "number" &&
@@ -207,7 +231,11 @@ export const CoordinatePickerMap: React.FC<CoordinatePickerMapProps> = ({
       onPick({ lat, lng });
     });
 
+    const onWindowResize = () => mapRef.current?.resize();
+    window.addEventListener("resize", onWindowResize);
+
     return () => {
+      window.removeEventListener("resize", onWindowResize);
       markerRef.current?.remove();
       markerRef.current = null;
       map.remove();
