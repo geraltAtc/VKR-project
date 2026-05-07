@@ -78,6 +78,11 @@ const nextConfig: NextConfig = {
         destination: "/tours",
         permanent: true,
       },
+      {
+        source: "/profile",
+        destination: "/tours",
+        permanent: true,
+      },
     ];
   },
 };

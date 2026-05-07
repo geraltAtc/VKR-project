@@ -8,9 +8,11 @@ import type { TourAccessLink, TourDetails, TourSummary } from "@/types/travel";
 
 type Notice = { type: "success" | "error"; text: string } | null;
 
-const numberValue = (value: string) => {
+const parseNullableNumber = (value: string) => {
+  const normalized = value.trim();
+  if (!normalized) return null;
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return Number.isFinite(parsed) ? parsed : null;
 };
 
 const emptyTourForm = {
@@ -104,6 +106,8 @@ export default function AdminPage() {
   const [isLoadingTours, setIsLoadingTours] = useState(true);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isLoadingAccessLinks, setIsLoadingAccessLinks] = useState(false);
+  const [isGeocodingHotel, setIsGeocodingHotel] = useState(false);
+  const [isGeocodingAttraction, setIsGeocodingAttraction] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [accessLinks, setAccessLinks] = useState<TourAccessLink[]>([]);
@@ -249,8 +253,8 @@ export default function AdminPage() {
     try {
       const response = await tourService.createTour({
         ...tourForm,
-        hotelLat: numberValue(tourForm.hotelLat),
-        hotelLng: numberValue(tourForm.hotelLng),
+        hotelLat: parseNullableNumber(tourForm.hotelLat),
+        hotelLng: parseNullableNumber(tourForm.hotelLng),
       });
 
       await loadTours();
@@ -265,6 +269,34 @@ export default function AdminPage() {
       handleError(reason);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGeocodeHotel = async () => {
+    const query = [tourForm.hotelAddress, tourForm.city, tourForm.country]
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0)
+      .join(", ");
+
+    if (!query) {
+      setNotice({ type: "error", text: "Укажите адрес/город/страну отеля для поиска координат." });
+      return;
+    }
+
+    setIsGeocodingHotel(true);
+    setNotice(null);
+    try {
+      const result = await tourService.geocodeAddress(query);
+      setTourForm((prev) => ({
+        ...prev,
+        hotelLat: result.lat.toFixed(6),
+        hotelLng: result.lng.toFixed(6),
+      }));
+      setNotice({ type: "success", text: "Координаты отеля определены автоматически." });
+    } catch (reason) {
+      handleError(reason);
+    } finally {
+      setIsGeocodingHotel(false);
     }
   };
 
@@ -300,8 +332,8 @@ export default function AdminPage() {
     try {
       const response = await tourService.createAttraction({
         ...attractionForm,
-        lat: numberValue(attractionForm.lat),
-        lng: numberValue(attractionForm.lng),
+        lat: parseNullableNumber(attractionForm.lat),
+        lng: parseNullableNumber(attractionForm.lng),
       });
       setNotice({ type: "success", text: response.message });
 
@@ -314,6 +346,34 @@ export default function AdminPage() {
       handleError(reason);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGeocodeAttraction = async () => {
+    const query = [attractionForm.address, tourForm.city, tourForm.country]
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0)
+      .join(", ");
+
+    if (!query) {
+      setNotice({ type: "error", text: "Укажите адрес достопримечательности для поиска координат." });
+      return;
+    }
+
+    setIsGeocodingAttraction(true);
+    setNotice(null);
+    try {
+      const result = await tourService.geocodeAddress(query);
+      setAttractionForm((prev) => ({
+        ...prev,
+        lat: result.lat.toFixed(6),
+        lng: result.lng.toFixed(6),
+      }));
+      setNotice({ type: "success", text: "Координаты достопримечательности определены автоматически." });
+    } catch (reason) {
+      handleError(reason);
+    } finally {
+      setIsGeocodingAttraction(false);
     }
   };
 
@@ -681,6 +741,18 @@ export default function AdminPage() {
                 placeholder="Описание трансфера"
                 className={`${textareaClass} md:col-span-2`}
               />
+              <div className="md:col-span-2">
+                <button
+                  type="button"
+                  onClick={handleGeocodeHotel}
+                  disabled={isGeocodingHotel || isSubmitting}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:opacity-40"
+                >
+                  {isGeocodingHotel
+                    ? "Определяем координаты отеля..."
+                    : "Определить координаты отеля по адресу"}
+                </button>
+              </div>
             </div>
             <button
               disabled={isSubmitting}
@@ -706,7 +778,7 @@ export default function AdminPage() {
                 placeholder="ID (оставьте пустым для новой)"
                 className={`${fieldClass} md:col-span-2`}
               />
-              {[
+              {[ 
                 ["tourId", "ID тура"],
                 ["name", "Название места"],
                 ["address", "Адрес"],
@@ -730,6 +802,18 @@ export default function AdminPage() {
                   className={fieldClass}
                 />
               ))}
+              <div className="md:col-span-2">
+                <button
+                  type="button"
+                  onClick={handleGeocodeAttraction}
+                  disabled={isGeocodingAttraction || isSubmitting}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:opacity-40"
+                >
+                  {isGeocodingAttraction
+                    ? "Определяем координаты достопримечательности..."
+                    : "Определить координаты достопримечательности по адресу"}
+                </button>
+              </div>
 
               <textarea
                 value={attractionForm.description}

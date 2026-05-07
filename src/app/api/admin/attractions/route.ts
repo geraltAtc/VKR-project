@@ -28,12 +28,9 @@ function parseRequiredString(value: unknown) {
   return null;
 }
 
-function parseRequiredNumber(value: unknown) {
-  if (typeof value === 'number') {
-    if (Number.isFinite(value)) {
-      return value;
-    }
-    return null;
+function parseOptionalNumber(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
   }
   if (typeof value === 'string') {
     const trimmed = value.trim();
@@ -72,8 +69,8 @@ export async function POST(request: Request) {
   const tourId = parseRequiredString(body.tourId);
   const name = parseRequiredString(body.name);
   const address = parseRequiredString(body.address);
-  const lat = parseRequiredNumber(body.lat);
-  const lng = parseRequiredNumber(body.lng);
+  let lat = parseOptionalNumber(body.lat);
+  let lng = parseOptionalNumber(body.lng);
 
   if (tourId === null) {
     return NextResponse.json({ message: 'Field tourId is required.' }, { status: 400 });
@@ -84,11 +81,40 @@ export async function POST(request: Request) {
   if (address === null) {
     return NextResponse.json({ message: 'Field address is required.' }, { status: 400 });
   }
-  if (lat === null) {
-    return NextResponse.json({ message: 'Field lat is required.' }, { status: 400 });
+  if (lat === null || lng === null) {
+    const url = new URL('https://nominatim.openstreetmap.org/search');
+    url.searchParams.set('format', 'jsonv2');
+    url.searchParams.set('limit', '1');
+    url.searchParams.set('q', address);
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Accept-Language': 'ru,en',
+        },
+        cache: 'no-store',
+      });
+      if (response.ok) {
+        const payload = (await response.json()) as Array<{ lat?: string; lon?: string }>;
+        const first = payload[0];
+        if (first) {
+          lat = parseOptionalNumber(first.lat);
+          lng = parseOptionalNumber(first.lon);
+        }
+      }
+    } catch {
+      // Ignore external geocoding failure and return friendly validation below.
+    }
   }
-  if (lng === null) {
-    return NextResponse.json({ message: 'Field lng is required.' }, { status: 400 });
+
+  if (lat === null || lng === null) {
+    return NextResponse.json(
+      {
+        message:
+          'Не удалось определить координаты автоматически. Уточните адрес или заполните широту/долготу вручную.',
+      },
+      { status: 400 },
+    );
   }
 
   let category = parseOptionalString(body.category);

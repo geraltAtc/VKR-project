@@ -18,8 +18,8 @@ interface CreateTourBody {
   transferDetails: string;
   emergencyPhone: string;
   operatorPhone: string;
-  hotelLat: number;
-  hotelLng: number;
+  hotelLat?: number | null;
+  hotelLng?: number | null;
 }
 
 const requiredStringFields: Array<keyof CreateTourBody> = [
@@ -51,6 +51,39 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as Partial<CreateTourBody>;
 
+  const parseOptionalNumber = (value: unknown): number | null => {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string") {
+      const parsed = Number(value.trim());
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return null;
+  };
+
+  const geocodeAddress = async (query: string): Promise<{ lat: number; lng: number } | null> => {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("limit", "1");
+    url.searchParams.set("q", query);
+
+    const response = await fetch(url, {
+      headers: {
+        "Accept-Language": "ru,en",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) return null;
+    const payload = (await response.json()) as Array<{ lat?: string; lon?: string }>;
+    const first = payload[0];
+    if (!first) return null;
+
+    const lat = parseOptionalNumber(first.lat);
+    const lng = parseOptionalNumber(first.lon);
+    if (lat === null || lng === null) return null;
+    return { lat, lng };
+  };
+
   for (const field of requiredStringFields) {
     if (!body[field] || typeof body[field] !== "string") {
       return NextResponse.json(
@@ -58,6 +91,28 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+  }
+
+  let hotelLat = parseOptionalNumber(body.hotelLat);
+  let hotelLng = parseOptionalNumber(body.hotelLng);
+
+  if (hotelLat === null || hotelLng === null) {
+    const locationQuery = `${body.hotelAddress}, ${body.city}, ${body.country}`;
+    const geocoded = await geocodeAddress(locationQuery);
+    if (geocoded) {
+      hotelLat = geocoded.lat;
+      hotelLng = geocoded.lng;
+    }
+  }
+
+  if (hotelLat === null || hotelLng === null) {
+    return NextResponse.json(
+      {
+        message:
+          "Не удалось определить координаты отеля автоматически. Уточните адрес или заполните широту/долготу вручную.",
+      },
+      { status: 400 },
+    );
   }
 
   const { error } = await supabase.from("tours").upsert(
@@ -77,8 +132,8 @@ export async function POST(request: Request) {
       transfer_details: body.transferDetails ?? "",
       emergency_phone: body.emergencyPhone ?? "",
       operator_phone: body.operatorPhone ?? "",
-      hotel_lat: body.hotelLat ?? 0,
-      hotel_lng: body.hotelLng ?? 0,
+      hotel_lat: hotelLat,
+      hotel_lng: hotelLng,
     },
     { onConflict: "id" },
   );

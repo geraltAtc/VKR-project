@@ -24,8 +24,8 @@ interface AdminTourPayload {
   transferDetails: string;
   emergencyPhone: string;
   operatorPhone: string;
-  hotelLat: number;
-  hotelLng: number;
+  hotelLat?: number | null;
+  hotelLng?: number | null;
 }
 
 interface AdminAttractionPayload {
@@ -33,8 +33,8 @@ interface AdminAttractionPayload {
   tourId: string;
   name: string;
   address: string;
-  lat: number;
-  lng: number;
+  lat?: number | null;
+  lng?: number | null;
   workingHours: string;
   entryPrice: string;
   visitDuration: string;
@@ -68,6 +68,12 @@ interface CreateAccessLinkPayload {
   tourId: string;
   label?: string;
   expiresAt?: string | null;
+}
+
+interface GeocodeResult {
+  lat: number;
+  lng: number;
+  displayName: string;
 }
 
 class TourService {
@@ -283,6 +289,14 @@ class TourService {
   async revokeAccessLink(id: string) {
     return this.request<{ message: string }>(`/admin/access-links/${id}`, {
       method: "DELETE",
+      credentials: "same-origin",
+    });
+  }
+
+  async geocodeAddress(query: string) {
+    const params = new URLSearchParams({ q: query });
+    return this.request<GeocodeResult>(`/admin/geocode?${params.toString()}`, {
+      method: "GET",
       credentials: "same-origin",
     });
   }
