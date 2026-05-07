@@ -114,7 +114,9 @@ export default function AdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [accessLinks, setAccessLinks] = useState<TourAccessLink[]>([]);
-  const [generatedAccessLink, setGeneratedAccessLink] = useState<string | null>(null);
+  const [generatedAccessLink, setGeneratedAccessLink] = useState<string | null>(
+    null,
+  );
 
   const [tourForm, setTourForm] = useState(emptyTourForm);
   const [attractionForm, setAttractionForm] = useState(emptyAttractionForm());
@@ -136,7 +138,10 @@ export default function AdminPage() {
   const handleError = (reason: unknown) => {
     setNotice({
       type: "error",
-      text: reason instanceof Error ? reason.message : "Не удалось выполнить запрос.",
+      text:
+        reason instanceof Error
+          ? reason.message
+          : "Не удалось выполнить запрос.",
     });
   };
 
@@ -281,7 +286,10 @@ export default function AdminPage() {
     const query = tourForm.hotelAddress.trim();
 
     if (!query) {
-      setNotice({ type: "error", text: "Укажите адрес отеля для поиска координат." });
+      setNotice({
+        type: "error",
+        text: "Укажите адрес отеля для поиска координат.",
+      });
       return;
     }
 
@@ -294,7 +302,10 @@ export default function AdminPage() {
         hotelLat: result.lat.toFixed(6),
         hotelLng: result.lng.toFixed(6),
       }));
-      setNotice({ type: "success", text: "Координаты отеля определены автоматически." });
+      setNotice({
+        type: "success",
+        text: "Координаты отеля определены автоматически.",
+      });
     } catch (reason) {
       handleError(reason);
     } finally {
@@ -355,7 +366,10 @@ export default function AdminPage() {
     const query = attractionForm.address.trim();
 
     if (!query) {
-      setNotice({ type: "error", text: "Укажите адрес достопримечательности для поиска координат." });
+      setNotice({
+        type: "error",
+        text: "Укажите адрес достопримечательности для поиска координат.",
+      });
       return;
     }
 
@@ -368,7 +382,10 @@ export default function AdminPage() {
         lat: result.lat.toFixed(6),
         lng: result.lng.toFixed(6),
       }));
-      setNotice({ type: "success", text: "Координаты достопримечательности определены автоматически." });
+      setNotice({
+        type: "success",
+        text: "Координаты достопримечательности определены автоматически.",
+      });
     } catch (reason) {
       handleError(reason);
     } finally {
@@ -522,8 +539,7 @@ export default function AdminPage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8">
         <p className="text-sm text-slate-600">
-          Выберите тур для редактирования или создайте новый. Все блоки ниже работают
-          без перезагрузки страницы.
+          Выберите тур для редактирования или создайте новый.
         </p>
 
         <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -545,7 +561,9 @@ export default function AdminPage() {
             </select>
 
             <button
-              onClick={() => selectedTourId && loadSelectedTourDetails(selectedTourId)}
+              onClick={() =>
+                selectedTourId && loadSelectedTourDetails(selectedTourId)
+              }
               disabled={!selectedTourId || isLoadingDetails}
               className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-40"
             >
@@ -568,7 +586,9 @@ export default function AdminPage() {
               {generatedAccessLink && (
                 <button
                   type="button"
-                  onClick={() => navigator.clipboard.writeText(generatedAccessLink)}
+                  onClick={() =>
+                    navigator.clipboard.writeText(generatedAccessLink)
+                  }
                   className="rounded-xl border border-cyan-300 px-3 py-1.5 text-xs text-cyan-900"
                 >
                   Скопировать последнюю ссылку
@@ -583,7 +603,10 @@ export default function AdminPage() {
               <input
                 value={accessLinkForm.label}
                 onChange={(event) =>
-                  setAccessLinkForm((prev) => ({ ...prev, label: event.target.value }))
+                  setAccessLinkForm((prev) => ({
+                    ...prev,
+                    label: event.target.value,
+                  }))
                 }
                 placeholder="Комментарий к ссылке (например: Иван Петров)"
                 className={fieldClass}
@@ -609,12 +632,16 @@ export default function AdminPage() {
             </form>
 
             {generatedAccessLink && (
-              <p className="mt-3 break-all text-sm text-cyan-800">{generatedAccessLink}</p>
+              <p className="mt-3 break-all text-sm text-cyan-800">
+                {generatedAccessLink}
+              </p>
             )}
 
             <div className="mt-3 space-y-2">
               {isLoadingAccessLinks && (
-                <p className="text-xs text-cyan-800">Загрузка персональных ссылок...</p>
+                <p className="text-xs text-cyan-800">
+                  Загрузка персональных ссылок...
+                </p>
               )}
               {!isLoadingAccessLinks && accessLinks.length === 0 && (
                 <p className="text-xs text-cyan-800">
@@ -631,7 +658,9 @@ export default function AdminPage() {
                     <p className="text-xs text-cyan-800">
                       {link.label ? `${link.label} • ` : ""}
                       {link.isActive ? "активна" : "неактивна"}
-                      {link.expiresAt ? ` • до ${new Date(link.expiresAt).toLocaleString()}` : ""}
+                      {link.expiresAt
+                        ? ` • до ${new Date(link.expiresAt).toLocaleString()}`
+                        : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -671,10 +700,7 @@ export default function AdminPage() {
         )}
 
         <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <form
-            onSubmit={handleSubmitTour}
-            className={formCardClass}
-          >
+          <form onSubmit={handleSubmitTour} className={formCardClass}>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-[#1A2B48]">1. Тур</h2>
               {selectedTourExists && (
@@ -724,7 +750,10 @@ export default function AdminPage() {
               <textarea
                 value={tourForm.roomDetails}
                 onChange={(event) =>
-                  setTourForm((prev) => ({ ...prev, roomDetails: event.target.value }))
+                  setTourForm((prev) => ({
+                    ...prev,
+                    roomDetails: event.target.value,
+                  }))
                 }
                 placeholder="Что входит в номер"
                 className={`${textareaClass} md:col-span-2`}
@@ -787,10 +816,7 @@ export default function AdminPage() {
             </button>
           </form>
 
-          <form
-            onSubmit={handleSubmitAttraction}
-            className={formCardClass}
-          >
+          <form onSubmit={handleSubmitAttraction} className={formCardClass}>
             <h2 className="text-lg font-semibold text-[#1A2B48]">
               2. Точка на карте (достопримечательность/полезное место)
             </h2>
@@ -798,7 +824,10 @@ export default function AdminPage() {
               <input
                 value={attractionForm.id}
                 onChange={(event) =>
-                  setAttractionForm((prev) => ({ ...prev, id: event.target.value }))
+                  setAttractionForm((prev) => ({
+                    ...prev,
+                    id: event.target.value,
+                  }))
                 }
                 placeholder="ID (оставьте пустым для новой)"
                 className={`${fieldClass} md:col-span-2`}
@@ -812,7 +841,10 @@ export default function AdminPage() {
                 ["workingHours", "Часы работы"],
                 ["entryPrice", "Цена входа"],
                 ["visitDuration", "Время на осмотр"],
-                ["category", "Категория (например: Достопримечательность, Метро, Кафе, Аптека)"],
+                [
+                  "category",
+                  "Категория (например: Достопримечательность, Метро, Кафе, Аптека)",
+                ],
               ].map(([key, placeholder]) => (
                 <input
                   key={key}
@@ -880,7 +912,10 @@ export default function AdminPage() {
               <textarea
                 value={attractionForm.tips}
                 onChange={(event) =>
-                  setAttractionForm((prev) => ({ ...prev, tips: event.target.value }))
+                  setAttractionForm((prev) => ({
+                    ...prev,
+                    tips: event.target.value,
+                  }))
                 }
                 placeholder="Совет туристу"
                 className={`${textareaClass} md:col-span-2`}
@@ -909,7 +944,9 @@ export default function AdminPage() {
               <p className="text-sm font-semibold text-slate-700">
                 Добавленные точки:
               </p>
-              {isLoadingDetails && <p className="text-xs text-slate-500">Загрузка...</p>}
+              {isLoadingDetails && (
+                <p className="text-xs text-slate-500">Загрузка...</p>
+              )}
               {!isLoadingDetails && selectedTour?.attractions.length === 0 && (
                 <p className="text-xs text-slate-500">Пока пусто.</p>
               )}
@@ -919,8 +956,12 @@ export default function AdminPage() {
                   className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2"
                 >
                   <div>
-                    <p className="text-sm font-medium text-slate-800">{attraction.name}</p>
-                    <p className="text-xs text-slate-500">{attraction.address}</p>
+                    <p className="text-sm font-medium text-slate-800">
+                      {attraction.name}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {attraction.address}
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -958,10 +999,7 @@ export default function AdminPage() {
             </div>
           </form>
 
-          <form
-            onSubmit={handleSubmitCountryInfo}
-            className={formCardClass}
-          >
+          <form onSubmit={handleSubmitCountryInfo} className={formCardClass}>
             <h2 className="text-lg font-semibold text-[#1A2B48]">
               3. Информация о стране
             </h2>
@@ -969,7 +1007,10 @@ export default function AdminPage() {
               <input
                 value={countryForm.tourId}
                 onChange={(event) =>
-                  setCountryForm((prev) => ({ ...prev, tourId: event.target.value }))
+                  setCountryForm((prev) => ({
+                    ...prev,
+                    tourId: event.target.value,
+                  }))
                 }
                 placeholder="ID тура"
                 className={fieldClass}
@@ -1006,16 +1047,18 @@ export default function AdminPage() {
             </button>
           </form>
 
-          <form
-            onSubmit={handleSubmitChecklist}
-            className={formCardClass}
-          >
-            <h2 className="text-lg font-semibold text-[#1A2B48]">4. Пункт чек-листа</h2>
+          <form onSubmit={handleSubmitChecklist} className={formCardClass}>
+            <h2 className="text-lg font-semibold text-[#1A2B48]">
+              4. Пункт чек-листа
+            </h2>
             <div className="mt-4 grid grid-cols-1 gap-3">
               <input
                 value={checklistForm.id}
                 onChange={(event) =>
-                  setChecklistForm((prev) => ({ ...prev, id: event.target.value }))
+                  setChecklistForm((prev) => ({
+                    ...prev,
+                    id: event.target.value,
+                  }))
                 }
                 placeholder="ID (оставьте пустым для нового)"
                 className={fieldClass}
@@ -1023,7 +1066,10 @@ export default function AdminPage() {
               <input
                 value={checklistForm.tourId}
                 onChange={(event) =>
-                  setChecklistForm((prev) => ({ ...prev, tourId: event.target.value }))
+                  setChecklistForm((prev) => ({
+                    ...prev,
+                    tourId: event.target.value,
+                  }))
                 }
                 placeholder="ID тура"
                 className={fieldClass}
@@ -1031,7 +1077,10 @@ export default function AdminPage() {
               <input
                 value={checklistForm.category}
                 onChange={(event) =>
-                  setChecklistForm((prev) => ({ ...prev, category: event.target.value }))
+                  setChecklistForm((prev) => ({
+                    ...prev,
+                    category: event.target.value,
+                  }))
                 }
                 placeholder="Категория (Документы, Одежда...)"
                 className={fieldClass}
@@ -1039,7 +1088,10 @@ export default function AdminPage() {
               <input
                 value={checklistForm.title}
                 onChange={(event) =>
-                  setChecklistForm((prev) => ({ ...prev, title: event.target.value }))
+                  setChecklistForm((prev) => ({
+                    ...prev,
+                    title: event.target.value,
+                  }))
                 }
                 placeholder="Название пункта"
                 className={fieldClass}
@@ -1047,7 +1099,10 @@ export default function AdminPage() {
               <textarea
                 value={checklistForm.note}
                 onChange={(event) =>
-                  setChecklistForm((prev) => ({ ...prev, note: event.target.value }))
+                  setChecklistForm((prev) => ({
+                    ...prev,
+                    note: event.target.value,
+                  }))
                 }
                 placeholder="Комментарий (опционально)"
                 className={textareaClass}
@@ -1086,18 +1141,25 @@ export default function AdminPage() {
             </div>
 
             <div className="mt-4 space-y-2">
-              <p className="text-sm font-semibold text-slate-700">Пункты чек-листа:</p>
-              {isLoadingDetails && <p className="text-xs text-slate-500">Загрузка...</p>}
-              {!isLoadingDetails && selectedTour?.checklistItems.length === 0 && (
-                <p className="text-xs text-slate-500">Пока пусто.</p>
+              <p className="text-sm font-semibold text-slate-700">
+                Пункты чек-листа:
+              </p>
+              {isLoadingDetails && (
+                <p className="text-xs text-slate-500">Загрузка...</p>
               )}
+              {!isLoadingDetails &&
+                selectedTour?.checklistItems.length === 0 && (
+                  <p className="text-xs text-slate-500">Пока пусто.</p>
+                )}
               {selectedTour?.checklistItems.map((item) => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2"
                 >
                   <div>
-                    <p className="text-sm font-medium text-slate-800">{item.title}</p>
+                    <p className="text-sm font-medium text-slate-800">
+                      {item.title}
+                    </p>
                     <p className="text-xs text-slate-500">
                       {item.category}
                       {item.required ? " • обязательный" : ""}

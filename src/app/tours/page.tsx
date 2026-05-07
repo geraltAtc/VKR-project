@@ -32,7 +32,9 @@ export default function ToursPage() {
       })
       .catch((reason) => {
         if (!active) return;
-        setError(humanizeLoadError(reason, "Не удалось загрузить список туров."));
+        setError(
+          humanizeLoadError(reason, "Не удалось загрузить список туров."),
+        );
       })
       .finally(() => {
         if (active) setIsLoading(false);
@@ -57,7 +59,11 @@ export default function ToursPage() {
     void Promise.allSettled(
       pendingTours.map(async (tour) => {
         const details = await tourService.getTourById(tour.id);
-        await tourService.getWeather(details.hotelLat, details.hotelLng, details.id);
+        await tourService.getWeather(
+          details.hotelLat,
+          details.hotelLng,
+          details.id,
+        );
       }),
     );
   }, [router, tours]);
@@ -90,10 +96,6 @@ export default function ToursPage() {
               Вход для администратора
             </Link>
           </div>
-          <p className="mt-2 max-w-2xl text-sm text-white/85">
-            Единый гид по поездке: проживание, карта, ориентиры, полезные контакты и
-            чек-лист в одном месте.
-          </p>
 
           <div className="mt-5">
             <input
@@ -106,11 +108,15 @@ export default function ToursPage() {
         </section>
 
         <section className="mt-6">
-          {isLoading && <p className="text-sm text-slate-500">Загрузка туров...</p>}
+          {isLoading && (
+            <p className="text-sm text-slate-500">Загрузка туров...</p>
+          )}
           {error && <p className="text-sm text-rose-600">{error}</p>}
 
           {!isLoading && !error && filteredTours.length === 0 && (
-            <p className="text-sm text-slate-600">По вашему запросу туров не найдено.</p>
+            <p className="text-sm text-slate-600">
+              По вашему запросу туров не найдено.
+            </p>
           )}
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
