@@ -792,7 +792,7 @@ export default function AdminPage() {
             className={formCardClass}
           >
             <h2 className="text-lg font-semibold text-[#1A2B48]">
-              2. Достопримечательность
+              2. Точка на карте (достопримечательность/полезное место)
             </h2>
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
               <input
@@ -803,7 +803,7 @@ export default function AdminPage() {
                 placeholder="ID (оставьте пустым для новой)"
                 className={`${fieldClass} md:col-span-2`}
               />
-              {[ 
+              {[
                 ["tourId", "ID тура"],
                 ["name", "Название места"],
                 ["address", "Адрес"],
@@ -812,7 +812,7 @@ export default function AdminPage() {
                 ["workingHours", "Часы работы"],
                 ["entryPrice", "Цена входа"],
                 ["visitDuration", "Время на осмотр"],
-                ["category", "Категория"],
+                ["category", "Категория (например: Достопримечательность, Метро, Кафе, Аптека)"],
               ].map(([key, placeholder]) => (
                 <input
                   key={key}
@@ -892,7 +892,7 @@ export default function AdminPage() {
                 disabled={isSubmitting}
                 className="rounded-xl bg-[#1A2B48] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
               >
-                {attractionForm.id ? "Обновить достопримечательность" : "Добавить достопримечательность"}
+                {attractionForm.id ? "Обновить точку" : "Добавить точку"}
               </button>
               <button
                 type="button"
@@ -907,7 +907,7 @@ export default function AdminPage() {
 
             <div className="mt-4 space-y-2">
               <p className="text-sm font-semibold text-slate-700">
-                Добавленные достопримечательности:
+                Добавленные точки:
               </p>
               {isLoadingDetails && <p className="text-xs text-slate-500">Загрузка...</p>}
               {!isLoadingDetails && selectedTour?.attractions.length === 0 && (

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { ChecklistPanel, Header, TourMap, WeatherPanel } from "@/components";
 import { tourService } from "@/services";
-import type { CountryInfo, TourDetails } from "@/types/travel";
+import type { Attraction, CountryInfo, TourDetails } from "@/types/travel";
 
 const countryBlocks = (countryInfo: CountryInfo | null) => [
   { title: "Валюта и деньги", value: countryInfo?.currencyInfo },
@@ -23,6 +23,31 @@ const humanizeLoadError = (reason: unknown) => {
     return "Нет сети и кэш этого тура пуст. Откройте тур онлайн хотя бы один раз, чтобы использовать его офлайн.";
   }
   return reason instanceof Error ? reason.message : "Не удалось загрузить тур.";
+};
+
+const utilityCategoryKeywords = [
+  "метро",
+  "subway",
+  "кафе",
+  "coffee",
+  "ресторан",
+  "restaurant",
+  "аптека",
+  "pharmacy",
+  "магазин",
+  "shop",
+  "станция",
+  "транспорт",
+  "bus",
+  "train",
+  "остановка",
+  "банк",
+  "atm",
+];
+
+const isUtilityCategory = (category: string) => {
+  const normalized = category.trim().toLowerCase();
+  return utilityCategoryKeywords.some((keyword) => normalized.includes(keyword));
 };
 
 interface AreaSectionProps {
@@ -130,6 +155,71 @@ export default function TourDetailsPage() {
     [tour?.countryInfo],
   );
 
+  const attractionPoints = useMemo(
+    () => (tour ? tour.attractions.filter((item) => !isUtilityCategory(item.category)) : []),
+    [tour],
+  );
+
+  const utilityPoints = useMemo(
+    () => (tour ? tour.attractions.filter((item) => isUtilityCategory(item.category)) : []),
+    [tour],
+  );
+
+  const renderPointCards = (points: Attraction[], emptyText: string) => {
+    if (points.length === 0) {
+      return <p className="text-sm text-slate-600 dark:text-slate-300">{emptyText}</p>;
+    }
+
+    return (
+      <div className="space-y-3">
+        {points.map((attraction) => (
+          <details
+            key={attraction.id}
+            className="group rounded-2xl border border-slate-200/80 bg-white/75 dark:border-slate-700 dark:bg-slate-900/60"
+          >
+            <summary className="flex cursor-pointer list-none items-start justify-between gap-3 px-4 py-3">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  {attraction.name}
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  {attraction.address}
+                </p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                {attraction.category}
+              </span>
+            </summary>
+
+            <div className="border-t border-slate-200/80 px-4 pb-4 pt-3 dark:border-slate-700">
+              <p className="text-sm text-slate-600 dark:text-slate-300">{attraction.description}</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                Часы: {attraction.workingHours} | Вход: {attraction.entryPrice} |
+                Время осмотра: {attraction.visitDuration}
+              </p>
+              <p className="mt-2 text-xs text-[#1A2B48] dark:text-slate-200">
+                Совет: {attraction.tips}
+              </p>
+
+              <button
+                onClick={() => setSelectedAttractionId(attraction.id)}
+                className={`mt-3 inline-flex rounded-xl border px-3 py-1.5 text-xs ${
+                  selectedAttractionId === attraction.id
+                    ? "border-[#17385F] bg-[#17385F] text-white"
+                    : "border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                }`}
+              >
+                {selectedAttractionId === attraction.id
+                  ? "Маршрут отображается на карте"
+                  : "Показать маршрут на карте"}
+              </button>
+            </div>
+          </details>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="travel-shell">
       <Header />
@@ -162,7 +252,13 @@ export default function TourDetailsPage() {
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-900/70 dark:text-slate-300">
-                  Достопримечательностей: {tour.attractions.length}
+                  Точек на карте: {tour.attractions.length}
+                </span>
+                <span className="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-900/70 dark:text-slate-300">
+                  Достопримечательности: {attractionPoints.length}
+                </span>
+                <span className="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-900/70 dark:text-slate-300">
+                  Полезные места: {utilityPoints.length}
                 </span>
                 <span className="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-900/70 dark:text-slate-300">
                   Пунктов чек-листа: {tour.checklistItems.length}
@@ -230,59 +326,20 @@ export default function TourDetailsPage() {
                   title="Достопримечательности"
                   subtitle="Список мест с раскрытием подробностей"
                 >
-                  {tour.attractions.length === 0 && (
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                      Пока нет добавленных мест. Администратор может заполнить раздел в
-                      панели.
-                    </p>
+                  {renderPointCards(
+                    attractionPoints,
+                    "Пока нет достопримечательностей. Администратор может заполнить раздел в панели.",
                   )}
+                </AreaSection>
 
-                  <div className="space-y-3">
-                    {tour.attractions.map((attraction) => (
-                      <details
-                        key={attraction.id}
-                        className="group rounded-2xl border border-slate-200/80 bg-white/75 dark:border-slate-700 dark:bg-slate-900/60"
-                      >
-                        <summary className="flex cursor-pointer list-none items-start justify-between gap-3 px-4 py-3">
-                          <div>
-                            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                              {attraction.name}
-                            </h3>
-                            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                              {attraction.address}
-                            </p>
-                          </div>
-                          <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                            {attraction.category}
-                          </span>
-                        </summary>
-
-                        <div className="border-t border-slate-200/80 px-4 pb-4 pt-3 dark:border-slate-700">
-                          <p className="text-sm text-slate-600 dark:text-slate-300">{attraction.description}</p>
-                          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                            Часы: {attraction.workingHours} | Вход: {attraction.entryPrice} |
-                            Время осмотра: {attraction.visitDuration}
-                          </p>
-                          <p className="mt-2 text-xs text-[#1A2B48] dark:text-slate-200">
-                            Совет: {attraction.tips}
-                          </p>
-
-                          <button
-                            onClick={() => setSelectedAttractionId(attraction.id)}
-                            className={`mt-3 inline-flex rounded-xl border px-3 py-1.5 text-xs ${
-                              selectedAttractionId === attraction.id
-                                ? "border-[#17385F] bg-[#17385F] text-white"
-                                : "border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
-                            }`}
-                          >
-                            {selectedAttractionId === attraction.id
-                              ? "Маршрут отображается на карте"
-                              : "Показать маршрут на карте"}
-                          </button>
-                        </div>
-                      </details>
-                    ))}
-                  </div>
+                <AreaSection
+                  title="Полезные места"
+                  subtitle="Метро, кафе, аптеки, транспорт и другие важные точки"
+                >
+                  {renderPointCards(
+                    utilityPoints,
+                    "Пока нет полезных мест. Администратор может добавить их в категории точек.",
+                  )}
                 </AreaSection>
               </section>
 

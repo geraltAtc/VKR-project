@@ -168,6 +168,26 @@ const isValidLng = (value: number) => Number.isFinite(value) && value >= -180 &&
 const isValidCoordinatePair = (lat: number, lng: number) =>
   isValidLat(lat) && isValidLng(lng);
 
+const normalizeCategory = (category: string) => category.trim().toLowerCase();
+
+const markerColorByCategory = (category: string) => {
+  const normalized = normalizeCategory(category);
+  if (normalized.includes("метро") || normalized.includes("subway")) return "#2563EB";
+  if (
+    normalized.includes("кафе") ||
+    normalized.includes("ресторан") ||
+    normalized.includes("ресторант") ||
+    normalized.includes("coffee")
+  ) {
+    return "#C2410C";
+  }
+  if (normalized.includes("аптек")) return "#16A34A";
+  if (normalized.includes("транспорт") || normalized.includes("bus") || normalized.includes("train")) {
+    return "#7C3AED";
+  }
+  return "#00D4FF";
+};
+
 export const TourMap: React.FC<TourMapProps> = ({
   hotel,
   attractions,
@@ -264,7 +284,10 @@ export const TourMap: React.FC<TourMapProps> = ({
         `<div style="font-size:13px;line-height:1.4;"><b>${escapeHtml(attraction.name)}</b><br/>${escapeHtml(attraction.address)}</div>`,
       );
       const marker = new maplibre.Marker({
-        color: attraction.id === selectedAttractionId ? "#E11D48" : "#00D4FF",
+        color:
+          attraction.id === selectedAttractionId
+            ? "#E11D48"
+            : markerColorByCategory(attraction.category),
       })
         .setLngLat([attraction.lng, attraction.lat])
         .setPopup(popup)
@@ -443,7 +466,7 @@ export const TourMap: React.FC<TourMapProps> = ({
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
       <div ref={mapContainerRef} style={{ height }} />
       <div className="border-t border-slate-200 px-3 py-2 text-xs text-slate-600">
-        {routeInfo || "Выберите достопримечательность, чтобы построить маршрут от отеля."}
+        {routeInfo || "Выберите точку на карте, чтобы построить маршрут от отеля."}
       </div>
     </div>
   );
