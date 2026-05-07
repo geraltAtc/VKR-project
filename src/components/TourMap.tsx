@@ -163,6 +163,11 @@ const formatDuration = (seconds: number) => {
   return `${minutes} мин`;
 };
 
+const isValidLat = (value: number) => Number.isFinite(value) && value >= -90 && value <= 90;
+const isValidLng = (value: number) => Number.isFinite(value) && value >= -180 && value <= 180;
+const isValidCoordinatePair = (lat: number, lng: number) =>
+  isValidLat(lat) && isValidLng(lng);
+
 export const TourMap: React.FC<TourMapProps> = ({
   hotel,
   attractions,
@@ -172,6 +177,7 @@ export const TourMap: React.FC<TourMapProps> = ({
   const mapRef = useRef<MapLibreMap | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const markerRefs = useRef<MapLibreMarker[]>([]);
+  const lastFittedBoundsKeyRef = useRef<string | null>(null);
   const [maplibre, setMapLibre] = useState<MapLibreGlobal | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -231,6 +237,14 @@ export const TourMap: React.FC<TourMapProps> = ({
     if (!maplibre || !mapRef.current) return;
 
     const map = mapRef.current;
+    if (!isValidCoordinatePair(hotel.lat, hotel.lng)) {
+      setErrorMessage(
+        "Некорректные координаты отеля. Проверьте широту и долготу в админ-панели.",
+      );
+      return;
+    }
+    setErrorMessage(null);
+
     map.jumpTo({ center: [hotel.lng, hotel.lat], zoom: 13 });
 
     markerRefs.current.forEach((marker) => marker.remove());
@@ -296,6 +310,21 @@ export const TourMap: React.FC<TourMapProps> = ({
 
     if (!selectedAttraction) {
       clearRoute();
+      lastFittedBoundsKeyRef.current = null;
+      return;
+    }
+
+    if (!isValidCoordinatePair(hotel.lat, hotel.lng)) {
+      clearRoute();
+      setRouteInfo("Невозможно построить маршрут: координаты отеля некорректны.");
+      return;
+    }
+
+    if (!isValidCoordinatePair(selectedAttraction.lat, selectedAttraction.lng)) {
+      clearRoute();
+      setRouteInfo(
+        `Невозможно построить маршрут до "${selectedAttraction.name}": координаты точки некорректны.`,
+      );
       return;
     }
 
@@ -352,13 +381,17 @@ export const TourMap: React.FC<TourMapProps> = ({
           });
         }
 
-        map.fitBounds(
-          [
-            [hotel.lng, hotel.lat],
-            [selectedAttraction.lng, selectedAttraction.lat],
-          ],
-          { padding: 70, maxZoom: 15 },
-        );
+        const nextBoundsKey = `${hotel.lat.toFixed(6)},${hotel.lng.toFixed(6)}|${selectedAttraction.lat.toFixed(6)},${selectedAttraction.lng.toFixed(6)}`;
+        if (lastFittedBoundsKeyRef.current !== nextBoundsKey) {
+          lastFittedBoundsKeyRef.current = nextBoundsKey;
+          map.fitBounds(
+            [
+              [hotel.lng, hotel.lat],
+              [selectedAttraction.lng, selectedAttraction.lat],
+            ],
+            { padding: 70, maxZoom: 15, duration: 0 },
+          );
+        }
 
         setRouteInfo(
           `Маршрут до "${selectedAttraction.name}": ${formatDistance(route.distance)} • ${formatDuration(route.duration)}`,

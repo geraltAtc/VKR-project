@@ -175,7 +175,6 @@ export default function TourDetailsPage() {
                 <AreaSection
                   title="Проживание и контакты"
                   subtitle="Отель, заселение, трансфер и важные телефоны"
-                  defaultOpen
                 >
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-4 dark:border-slate-700 dark:bg-slate-900/60">
@@ -214,7 +213,6 @@ export default function TourDetailsPage() {
                 <AreaSection
                   title="Карта и маршрут"
                   subtitle="Построение маршрута от отеля до выбранной точки"
-                  defaultOpen
                 >
                   <TourMap
                     hotel={{
@@ -231,7 +229,6 @@ export default function TourDetailsPage() {
                 <AreaSection
                   title="Достопримечательности"
                   subtitle="Список мест с раскрытием подробностей"
-                  defaultOpen
                 >
                   {tour.attractions.length === 0 && (
                     <p className="text-sm text-slate-600 dark:text-slate-300">
@@ -293,7 +290,6 @@ export default function TourDetailsPage() {
                 <AreaSection
                   title="Информация о стране"
                   subtitle="Валюта, язык, безопасность, контакты"
-                  defaultOpen
                 >
                   <div className="space-y-3">
                     {infoBlocks.map((item) => (
@@ -315,7 +311,6 @@ export default function TourDetailsPage() {
                 <AreaSection
                   title="Погода"
                   subtitle="Актуальные условия по координатам тура"
-                  defaultOpen
                 >
                   <WeatherPanel
                     tourId={tour.id}
@@ -328,7 +323,6 @@ export default function TourDetailsPage() {
                 <AreaSection
                   title="Чек-лист"
                   subtitle="Контроль готовности к поездке"
-                  defaultOpen
                 >
                   <ChecklistPanel tourId={tour.id} items={tour.checklistItems} embedded />
                 </AreaSection>
