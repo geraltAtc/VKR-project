@@ -163,8 +163,10 @@ const formatDuration = (seconds: number) => {
   return `${minutes} мин`;
 };
 
-const isValidLat = (value: number) => Number.isFinite(value) && value >= -90 && value <= 90;
-const isValidLng = (value: number) => Number.isFinite(value) && value >= -180 && value <= 180;
+const isValidLat = (value: number) =>
+  Number.isFinite(value) && value >= -90 && value <= 90;
+const isValidLng = (value: number) =>
+  Number.isFinite(value) && value >= -180 && value <= 180;
 const isValidCoordinatePair = (lat: number, lng: number) =>
   isValidLat(lat) && isValidLng(lng);
 
@@ -172,7 +174,8 @@ const normalizeCategory = (category: string) => category.trim().toLowerCase();
 
 const markerColorByCategory = (category: string) => {
   const normalized = normalizeCategory(category);
-  if (normalized.includes("метро") || normalized.includes("subway")) return "#2563EB";
+  if (normalized.includes("метро") || normalized.includes("subway"))
+    return "#2563EB";
   if (
     normalized.includes("кафе") ||
     normalized.includes("ресторан") ||
@@ -182,7 +185,11 @@ const markerColorByCategory = (category: string) => {
     return "#C2410C";
   }
   if (normalized.includes("аптек")) return "#16A34A";
-  if (normalized.includes("транспорт") || normalized.includes("bus") || normalized.includes("train")) {
+  if (
+    normalized.includes("транспорт") ||
+    normalized.includes("bus") ||
+    normalized.includes("train")
+  ) {
     return "#7C3AED";
   }
   return "#00D4FF";
@@ -307,12 +314,18 @@ export const TourMap: React.FC<TourMapProps> = ({
     };
 
     if (typeof window !== "undefined") {
-      window.addEventListener("lite-travel:section-opened", handleSectionOpened);
+      window.addEventListener(
+        "lite-travel:section-opened",
+        handleSectionOpened,
+      );
     }
 
     return () => {
       if (typeof window !== "undefined") {
-        window.removeEventListener("lite-travel:section-opened", handleSectionOpened);
+        window.removeEventListener(
+          "lite-travel:section-opened",
+          handleSectionOpened,
+        );
       }
     };
   }, []);
@@ -339,11 +352,15 @@ export const TourMap: React.FC<TourMapProps> = ({
 
     if (!isValidCoordinatePair(hotel.lat, hotel.lng)) {
       clearRoute();
-      setRouteInfo("Невозможно построить маршрут: координаты отеля некорректны.");
+      setRouteInfo(
+        "Невозможно построить маршрут: координаты отеля некорректны.",
+      );
       return;
     }
 
-    if (!isValidCoordinatePair(selectedAttraction.lat, selectedAttraction.lng)) {
+    if (
+      !isValidCoordinatePair(selectedAttraction.lat, selectedAttraction.lng)
+    ) {
       clearRoute();
       setRouteInfo(
         `Невозможно построить маршрут до "${selectedAttraction.name}": координаты точки некорректны.`,
@@ -415,10 +432,11 @@ export const TourMap: React.FC<TourMapProps> = ({
             Math.max(hotel.lng, selectedAttraction.lng),
             Math.max(hotel.lat, selectedAttraction.lat),
           ];
-          map.fitBounds(
-            [southWest, northEast],
-            { padding: 70, maxZoom: 15, duration: 0 },
-          );
+          map.fitBounds([southWest, northEast], {
+            padding: 70,
+            maxZoom: 15,
+            duration: 0,
+          });
         }
 
         setRouteInfo(
@@ -466,7 +484,7 @@ export const TourMap: React.FC<TourMapProps> = ({
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
       <div ref={mapContainerRef} style={{ height }} />
       <div className="border-t border-slate-200 px-3 py-2 text-xs text-slate-600">
-        {routeInfo || "Выберите точку на карте, чтобы построить маршрут от отеля."}
+        {routeInfo || ""}
       </div>
     </div>
   );
